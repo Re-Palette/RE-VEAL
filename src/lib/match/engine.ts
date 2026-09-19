@@ -33,9 +33,10 @@ interface Rule {
 function accumulate(rules: Rule[]): { score: number; reasons: MatchReason[] } {
   const earned = rules.reduce((total, r) => total + r.points, 0);
   const possible = rules.reduce((total, r) => total + r.max, 0) || 1;
-  // Matches below ~50 are noise for a discovery product, so the visible range
-  // is compressed into 52–99 rather than 0–100.
-  const score = clamp(Math.round(52 + 47 * (earned / possible)), 52, 99);
+  // No rule set ever fires completely, so a raw ratio would top out in the
+  // seventies and make a genuinely strong match look lukewarm. The stretch
+  // below puts real top matches in the nineties and keeps weak ones honest.
+  const score = clamp(Math.round(45 + 71 * (earned / possible)), 51, 99);
   const reasons = rules
     .flatMap((r) => (r.reason && r.points > 0 ? [r.reason] : []))
     .sort((a, b) => b.weight - a.weight);

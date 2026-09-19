@@ -154,7 +154,7 @@ export function SvgWorldMap({
     <div className={cn("relative overflow-hidden rounded-panel border border-ink-08 bg-white", className)}>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           backgroundImage:
             "radial-gradient(120% 90% at 18% 8%, #f2edff 0%, transparent 55%), radial-gradient(110% 90% at 88% 20%, #e6f0fd 0%, transparent 52%), radial-gradient(100% 80% at 50% 110%, #fdeaf2 0%, transparent 58%)",
@@ -176,9 +176,9 @@ export function SvgWorldMap({
       >
         <defs>
           <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="55%" stopColor="#f4f2fb" />
-            <stop offset="100%" stopColor="#eef3fb" />
+            <stop offset="0%" stopColor="#ece7fb" />
+            <stop offset="48%" stopColor="#e2e7f6" />
+            <stop offset="100%" stopColor="#dfeaf8" />
           </linearGradient>
           <linearGradient id="pin" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#9b87e8" />
@@ -210,23 +210,27 @@ export function SvgWorldMap({
                 key={shape.id}
                 d={shape.d}
                 fill="url(#land)"
-                stroke="#cfd4e4"
-                strokeWidth={0.45 / transform.scale}
+                stroke="#b9c1da"
+                strokeWidth={0.5 / transform.scale}
                 strokeLinejoin="round"
               />
             ))}
           </g>
 
           <g>
-            {ordered.map((marker) => {
+            {ordered.map((marker, index) => {
+              // `ordered` is weakest-first so strong pins paint on top; rank 0
+              // is therefore the strongest marker.
+              const rank = ordered.length - 1 - index;
               const { x, y } = project(marker.city.lat, marker.city.lng);
               const selected = selectedCityId === marker.city.id;
               const isHovered = hovered === marker.city.id;
               const weight = personalised
                 ? ((marker.score ?? 60) - 50) / 50
                 : marker.count / maxCount;
-              const radius = (4 + weight * 7) / Math.sqrt(transform.scale);
+              const radius = (4.5 + weight * 7.5) / Math.sqrt(transform.scale);
               const label = personalised ? `${marker.score}%` : String(marker.count);
+              const showLabel = selected || isHovered || transform.scale > 1.8 || rank < 5;
 
               return (
                 <g
@@ -257,6 +261,7 @@ export function SvgWorldMap({
                     stroke="#ffffff"
                     strokeWidth={(selected ? 2 : 1.2) / Math.sqrt(transform.scale)}
                   />
+                  {showLabel && (
                   <text
                     y={-radius - 3.5 / Math.sqrt(transform.scale)}
                     textAnchor="middle"
@@ -272,6 +277,7 @@ export function SvgWorldMap({
                   >
                     {marker.city.name} · {label}
                   </text>
+                  )}
                 </g>
               );
             })}

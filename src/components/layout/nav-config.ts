@@ -6,6 +6,7 @@ import {
   Compass,
   GraduationCap,
   Home,
+  LayoutGrid,
   MessageCircle,
   Globe,
   Settings,
@@ -51,7 +52,7 @@ export const NAV_GROUPS: NavGroup[] = [
     labelKey: "nav.grow",
     items: [
       { href: "/learn", labelKey: "nav.learn", icon: GraduationCap },
-      { href: "/portfolio", labelKey: "nav.portfolio", icon: Sparkles },
+      { href: "/portfolio", labelKey: "nav.portfolio", icon: LayoutGrid },
     ],
   },
   {
