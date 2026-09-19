@@ -26,8 +26,9 @@ npm start
 npm run typecheck  # tsc --noEmit
 ```
 
-Node 20+ required. No environment variables, no external services: the whole
-prototype runs on in-repo mock data.
+Node 20+ required. With no environment variables set, the whole prototype runs
+on in-repo mock data as a **demo profile** — see *Accounts* below to turn on
+real Google sign-in.
 
 ---
 
@@ -41,6 +42,7 @@ prototype runs on in-repo mock data.
 | Components | shadcn/ui-style primitives built on Radix |
 | Icons | Lucide |
 | Map | In-house SVG engine behind a swappable contract |
+| Auth | Auth.js v5 (NextAuth) with Google, JWT sessions |
 | Data | Mock `DataSource`, shaped for Supabase / PostgreSQL |
 
 ---
@@ -148,6 +150,87 @@ separator, since CJK does not join clauses the way English does.
 
 ---
 
+## Accounts
+
+Sign-in is **Google only**, through Auth.js v5. There is no password to
+forget and no separate sign-up form: the first Google sign-in creates the
+account.
+
+### Two modes
+
+**Demo mode** — the default, and what you get with no credentials configured.
+Everything works against the seeded profile, nothing is gated, and the sidebar
+offers to sign in. This keeps the prototype explorable for anyone who clones
+the repo.
+
+**Accounts mode** — active as soon as `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`
+are present. Discovery (home, map, people, brands, projects, events, discover,
+learn) stays public; the personal surfaces (`/messages`, `/notifications`,
+`/settings`, `/portfolio`, `/profile`) require an account.
+
+### Turning it on
+
+1. **Google Cloud Console** → *APIs & Services* → *Credentials* →
+   *Create credentials* → *OAuth client ID* → *Web application*.
+
+2. **Authorised JavaScript origins**
+
+   ```
+   http://localhost:3000
+   https://<your-domain>
+   ```
+
+3. **Authorised redirect URIs** — the path is fixed by Auth.js:
+
+   ```
+   http://localhost:3000/api/auth/callback/google
+   https://<your-domain>/api/auth/callback/google
+   ```
+
+4. Copy `.env.example` to `.env.local` and fill in the client ID and secret.
+
+5. Generate a session-signing secret:
+
+   ```bash
+   npx auth secret          # or: openssl rand -base64 32
+   ```
+
+On Vercel, set the same three variables in *Project Settings → Environment
+Variables* and redeploy. RE:VEAL requests only `openid profile email`, so
+Google returns a name, an email address and a profile picture — nothing else,
+and nothing is posted on the user's behalf.
+
+### Sign-up collects a profile, because matching needs one
+
+A Google account gives a name; it cannot say what someone makes or who they
+want to make it with. Every match score is built from role, city, beauty
+categories, skills and what the person is open to, so first sign-in goes
+through `/onboarding` to collect those. Middleware holds a half-finished
+account there until it is done — an un-onboarded profile would score every
+match at the floor and the product would look broken.
+
+### Where the profile lives
+
+There is no database yet, so the profile travels in the **encrypted session
+cookie** (`session: { strategy: "jwt" }`). That is stateless, survives across
+serverless instances, and needs no infrastructure — but it also means a profile
+is only as durable as the cookie, and it is the first thing that should move
+when Supabase lands. The seam is `src/lib/auth/viewer.ts`:
+
+```ts
+export async function getViewer(): Promise<Viewer>   // "demo" | "member"
+```
+
+Everything viewer-relative — match scores, messages, notifications,
+connections — resolves through it, so moving accounts into a database is a
+change to that file and `DataSource`, not to any page.
+
+A signed-in account starts genuinely empty: no followers, no inbox, no
+portfolio. Inventing numbers for a new user is the one dishonest thing this
+product could do, so it does not.
+
+---
+
 ## Routes
 
 | Route | What it is |
@@ -164,6 +247,7 @@ separator, since CJK does not join clauses the way English does.
 | `/portfolio` | Your record of work in the industry |
 | `/messages` | Direct, group, project and brand threads |
 | `/notifications`, `/settings`, `/profile` | Personal surfaces |
+| `/signin`, `/onboarding` | Google sign-in and first-run profile setup |
 | `/api/search`, `/api/match` | The two server boundaries the client talks to |
 
 ---
@@ -204,14 +288,16 @@ chrome, taxonomy, match reasoning, dates and card-level content.
 state; they survive interaction but not a reload. Each sits behind a component
 boundary that becomes a server action unchanged.
 
-**Not built:** authentication, file uploads, payments, real-time transport.
+**Not built:** file uploads, payments, real-time transport, and a database —
+accounts are real but their profiles live in the session cookie.
 
 ---
 
 ## Extending it
 
 - **Supabase** — implement `DataSource`, swap the binding in
-  `src/lib/data-source/index.ts`.
+  `src/lib/data-source/index.ts`. Move the member profile out of the session at
+  the same time: `getViewer()` then loads a row by account id.
 - **An LLM for matching** — implement `Interpreter`, or replace the body of
   `/api/match`. `MatchResult` does not change.
 - **Mapbox / Google Maps** — implement `MapEngineProps`, swap the engine in

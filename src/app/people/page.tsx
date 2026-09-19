@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/data-source";
 import { getI18n } from "@/lib/i18n/server";
-import { connectionStatusFor } from "@/lib/data/social";
 import { PeopleDirectory } from "@/app/people/people-directory";
 import { ListingSkeleton } from "@/components/ui/skeletons";
 
@@ -20,7 +19,7 @@ export default async function PeoplePage() {
   ]);
 
   const others = people.filter((p) => p.id !== viewer.id);
-  const connections = Object.fromEntries(others.map((p) => [p.id, connectionStatusFor(p.id)]));
+  const connections = await db.connectionStatuses();
 
   return (
     <Suspense fallback={<ListingSkeleton />}>

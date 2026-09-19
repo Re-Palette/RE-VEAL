@@ -27,6 +27,7 @@ export function Avatar({
   square = false,
   className,
   ring = false,
+  src,
 }: {
   seed: string;
   name: string;
@@ -34,7 +35,27 @@ export function Avatar({
   square?: boolean;
   className?: string;
   ring?: boolean;
+  /** A real profile picture, when the account has one. */
+  src?: string;
 }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        className={cn(
+          "shrink-0 object-cover",
+          square ? "rounded-2xl" : "rounded-full",
+          ring && "ring-2 ring-white",
+          SIZES[size],
+          className,
+        )}
+      />
+    );
+  }
+
   return (
     <span
       className={cn(

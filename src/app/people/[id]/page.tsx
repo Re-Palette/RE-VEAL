@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/data-source";
 import { getI18n } from "@/lib/i18n/server";
-import { connectionStatusFor } from "@/lib/data/social";
 import { loadProfile } from "@/lib/profile-data";
 import { ProfileView } from "@/components/profile/profile-view";
 import { createI18n, DEFAULT_LANGUAGE } from "@/lib/i18n";
@@ -38,7 +37,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     <ProfileView
       person={person}
       match={matches.find((m) => m.targetId === person.id)}
-      connection={connectionStatusFor(person.id)}
+      connection={(await db.connectionStatuses())[person.id] ?? "none"}
       isSelf={person.id === viewer.id}
       {...data}
     />

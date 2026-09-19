@@ -1,6 +1,7 @@
 import type { LanguageCode } from "@/lib/types";
 import type {
   BeautyEvent,
+  ConnectionStatus,
   Brand,
   City,
   Connection,
@@ -55,6 +56,8 @@ export interface DataSource {
   listMessages(threadId: string): Promise<Message[]>;
   listNotifications(): Promise<Notification[]>;
   listConnections(): Promise<Connection[]>;
+  /** Connection state keyed by person id, for the signed-in viewer. */
+  connectionStatuses(): Promise<Record<string, ConnectionStatus>>;
 
   /**
    * Ranked matches for the signed-in viewer, optionally narrowed by kind.

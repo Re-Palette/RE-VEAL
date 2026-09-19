@@ -2,7 +2,7 @@
   "name": "re-veal",
   "version": "0.1.0",
   "private": true,
-  "description": "RE:VEAL \u2014 Beauty Connects the World. A global beauty ecosystem connecting people, brands, projects and events.",
+  "description": "RE:VEAL — Beauty Connects the World. A global beauty ecosystem connecting people, brands, projects and events.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -27,6 +27,7 @@
     "clsx": "2.1.1",
     "lucide-react": "1.47.0",
     "next": "16.3.5",
+    "next-auth": "^5.0.0-beta.32",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwind-merge": "3.7.0"

@@ -2,9 +2,10 @@ import { BRANDS, BRAND_BY_ID, OPPORTUNITIES } from "@/lib/data/brands";
 import { COURSES, COURSE_BY_ID, PORTFOLIO, POSTS } from "@/lib/data/content";
 import { EVENTS, EVENT_BY_ID } from "@/lib/data/events";
 import { CITIES, CITY_BY_ID, COUNTRIES } from "@/lib/data/geo";
-import { CURRENT_USER_ID, PEOPLE, PERSON_BY_ID } from "@/lib/data/people";
+import { PEOPLE, PERSON_BY_ID } from "@/lib/data/people";
 import { PROJECTS, PROJECT_BY_ID } from "@/lib/data/projects";
 import { CONNECTIONS, MESSAGES, NOTIFICATIONS, THREADS } from "@/lib/data/social";
+import { getViewer } from "@/lib/auth/viewer";
 import { SKILLS } from "@/lib/data/taxonomy";
 import { scoreBrand, scoreCity, scoreEvent, scorePerson, scoreProject } from "@/lib/match/engine";
 import { cityOpportunityCounts } from "@/lib/match/city-stats";
@@ -12,17 +13,20 @@ import type { DataSource } from "@/lib/data-source/types";
 import type { LanguageCode, MatchResult, SearchResult } from "@/lib/types";
 import { createI18n } from "@/lib/i18n";
 
-function me() {
-  const person = PERSON_BY_ID.get(CURRENT_USER_ID);
-  if (!person) throw new Error(`Current user ${CURRENT_USER_ID} missing from dataset`);
-  return person;
+/**
+ * The seeded social graph (threads, notifications, connections) belongs to the
+ * demo profile. A real signed-in account starts empty, which is the honest
+ * answer — inventing an inbox for a brand-new user would be a lie.
+ */
+async function seededSocialOnly(): Promise<boolean> {
+  return (await getViewer()).kind === "demo";
 }
 
 export class MockDataSource implements DataSource {
   readonly id = "mock";
 
   async getCurrentUser() {
-    return me();
+    return (await getViewer()).person;
   }
 
   async listPeople() {
@@ -86,23 +90,34 @@ export class MockDataSource implements DataSource {
   }
 
   async listThreads() {
+    if (!(await seededSocialOnly())) return [];
     return [...THREADS].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   async listMessages(threadId: string) {
-    return MESSAGES.filter((m) => m.threadId === threadId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (!(await seededSocialOnly())) return [];
+    return MESSAGES.filter((m) => m.threadId === threadId).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    );
   }
 
   async listNotifications() {
+    if (!(await seededSocialOnly())) return [];
     return [...NOTIFICATIONS].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async listConnections() {
+    if (!(await seededSocialOnly())) return [];
     return CONNECTIONS;
   }
 
+  async connectionStatuses() {
+    const connections = await this.listConnections();
+    return Object.fromEntries(connections.map((c) => [c.toUserId, c.status]));
+  }
+
   async matchesFor(kind: MatchResult["targetKind"], limit = 12, language: LanguageCode = "en") {
-    const viewer = me();
+    const viewer = (await getViewer()).person;
     const i18n = createI18n(language);
     let results: MatchResult[];
     switch (kind) {

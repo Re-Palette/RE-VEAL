@@ -1,8 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Sidebar, type SidebarCounts } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/topbar";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import type { AccountState } from "@/components/layout/account-menu";
 import { TooltipProvider } from "@/components/ui/misc";
 import type { PersonView } from "@/lib/types";
 
@@ -10,17 +12,25 @@ import type { PersonView } from "@/lib/types";
  * Desktop: persistent sidebar, as specified. Tablet and mobile: the sidebar
  * collapses into the top bar's drawer and a five-item bottom navigation.
  */
+/** Routes that render standalone, without sidebar or top bar. */
+const BARE_ROUTES = ["/signin", "/onboarding"];
+
 export function AppShell({
   viewer,
   counts,
   cityId,
+  account,
   children,
 }: {
   viewer: PersonView;
   counts: SidebarCounts;
   cityId: string;
+  account: AccountState;
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const bare = BARE_ROUTES.some((route) => pathname.startsWith(route));
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="relative flex min-h-dvh">
@@ -31,16 +41,22 @@ export function AppShell({
           <div className="absolute bottom-[-16%] left-[24%] size-[46vw] rounded-full bg-blush-soft/55 blur-[130px] animate-drift [animation-delay:-14s]" />
         </div>
 
-        <div className="sticky top-0 h-dvh">
-          <Sidebar viewer={viewer} counts={counts} cityId={cityId} />
-        </div>
+        {bare ? (
+          <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+        ) : (
+          <>
+            <div className="sticky top-0 h-dvh">
+              <Sidebar viewer={viewer} counts={counts} cityId={cityId} account={account} />
+            </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar viewer={viewer} counts={counts} />
-          <main className="flex-1 pb-24 lg:pb-12">{children}</main>
-        </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <TopBar viewer={viewer} counts={counts} />
+              <main className="flex-1 pb-24 lg:pb-12">{children}</main>
+            </div>
 
-        <BottomNav counts={counts} />
+            <BottomNav counts={counts} />
+          </>
+        )}
       </div>
     </TooltipProvider>
   );

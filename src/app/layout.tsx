@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { getLanguage } from "@/lib/i18n/server";
+import { getViewer } from "@/lib/auth/viewer";
 import { db } from "@/lib/data-source";
 import "./globals.css";
 
@@ -29,12 +30,18 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [language, viewer, threads, notifications] = await Promise.all([
+  const [language, viewerState, threads, notifications] = await Promise.all([
     getLanguage(),
-    db.getCurrentUser(),
+    getViewer(),
     db.listThreads(),
     db.listNotifications(),
   ]);
+
+  const viewer = viewerState.person;
+  const account =
+    viewerState.kind === "member"
+      ? { kind: "member" as const, email: viewerState.member.email, image: viewerState.member.image }
+      : { kind: "demo" as const };
 
   const counts = {
     messages: threads.reduce((total, thread) => total + (thread.unread > 0 ? 1 : 0), 0),
@@ -49,6 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             viewer={viewer}
             counts={counts}
             cityId={viewer.profile.cityId}
+            account={account}
           >
             {children}
           </AppShell>

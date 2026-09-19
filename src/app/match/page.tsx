@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/data-source";
 import { getI18n } from "@/lib/i18n/server";
-import { connectionStatusFor } from "@/lib/data/social";
 import { MatchBoard } from "@/app/match/match-board";
 import { ListingSkeleton } from "@/components/ui/skeletons";
 
@@ -38,7 +37,7 @@ export default async function MatchPage() {
         projects={projects}
         events={events}
         matches={{ person, brand, project, event }}
-        connections={Object.fromEntries(others.map((p) => [p.id, connectionStatusFor(p.id)]))}
+        connections={await db.connectionStatuses()}
       />
     </Suspense>
   );

@@ -18,7 +18,6 @@ import { db } from "@/lib/data-source";
 import { getI18n } from "@/lib/i18n/server";
 import { CITY_BY_ID } from "@/lib/data/geo";
 import { cityOpportunityCounts } from "@/lib/match/city-stats";
-import { connectionStatusFor } from "@/lib/data/social";
 import { PERSON_BY_ID } from "@/lib/data/people";
 import { relativeTime } from "@/lib/utils";
 import type { MapMarker } from "@/components/map/types";
@@ -36,6 +35,8 @@ export default async function HomePage() {
     db.listNotifications(),
     db.listThreads(),
   ]);
+
+  const connections = await db.connectionStatuses();
 
   const [personMatches, brandMatches, projectMatches, eventMatches, cityMatches] = await Promise.all([
     db.matchesFor("person", 4, i18n.language),
@@ -97,7 +98,7 @@ export default async function HomePage() {
                         key={person.id}
                         person={person}
                         match={match}
-                        connection={connectionStatusFor(person.id)}
+                        connection={connections[person.id] ?? "none"}
                       />,
                     ]
                   : [];

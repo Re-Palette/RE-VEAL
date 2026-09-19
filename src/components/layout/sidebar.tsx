@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
-import { Avatar } from "@/components/ui/avatar";
 import { Logo } from "@/components/layout/logo";
 import { NAV_GROUPS } from "@/components/layout/nav-config";
+import { AccountMenu, type AccountState } from "@/components/layout/account-menu";
 import { useI18n } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 import type { PersonView } from "@/lib/types";
@@ -24,13 +23,15 @@ export function Sidebar({
   viewer,
   counts,
   cityId,
+  account,
 }: {
   viewer: PersonView;
   counts: SidebarCounts;
   cityId: string;
+  account: AccountState;
 }) {
   const pathname = usePathname();
-  const { t, L, city } = useI18n();
+  const { t } = useI18n();
 
   return (
     <aside className="hidden h-dvh w-[264px] shrink-0 flex-col border-r border-ink-08 bg-white/70 backdrop-blur-xl lg:flex xl:w-[276px]">
@@ -86,20 +87,9 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-ink-08 p-3">
-        <Link
-          href="/profile"
-          className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-white/80"
-        >
-          <Avatar seed={viewer.avatarSeed} name={viewer.name} size="md" />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold">{viewer.name}</span>
-            <span className="block truncate text-xs text-ink-50">
-              {L.role[viewer.profile.role]} · {city(cityId)}
-            </span>
-          </span>
-          <ArrowUpRight className="size-4 shrink-0 text-ink-30" />
-        </Link>
+        <AccountMenu viewer={viewer} account={account} cityId={cityId} />
       </div>
+
     </aside>
   );
 }

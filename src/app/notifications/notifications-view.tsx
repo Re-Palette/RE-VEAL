@@ -107,7 +107,15 @@ export function NotificationsView({
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Bell} title={t("notifications.empty.title")} description={t("notifications.empty.description")} />
+        <EmptyState
+          icon={Bell}
+          title={t("notifications.empty.title")}
+          description={
+            notifications.length === 0
+              ? t("empty.newAccount.notifications")
+              : t("notifications.empty.description")
+          }
+        />
       ) : (
         <Card className="divide-y divide-ink-08 overflow-hidden">
           {filtered.map((notification) => {

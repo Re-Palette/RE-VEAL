@@ -781,6 +781,111 @@ export const UI_STRINGS = {
     zh: "在{city}举办的{title}涵盖{categories}。",
   },
   "narrative.city": { en: "{city}: {tagline}", ja: "{city}：{tagline}", ko: "{city}: {tagline}", zh: "{city}：{tagline}" },
+
+  // ── Accounts and sign-in ────────────────────────────────────────────────
+  "auth.signIn.title": { en: "Sign in to RE:VEAL", ja: "RE:VEALにサインイン", ko: "RE:VEAL에 로그인", zh: "登录 RE:VEAL" },
+  "auth.signIn.subtitle": {
+    en: "One account for everything: your portfolio, your matches, and the projects you join.",
+    ja: "ポートフォリオも、マッチも、参加するプロジェクトも、ひとつのアカウントで。",
+    ko: "포트폴리오도, 매치도, 참여하는 프로젝트도 하나의 계정으로.",
+    zh: "一个账号，管理你的作品集、匹配与参与的项目。",
+  },
+  "auth.continueWithGoogle": { en: "Continue with Google", ja: "Googleで続ける", ko: "Google로 계속하기", zh: "使用 Google 继续" },
+  "auth.signUpNote": {
+    en: "New to RE:VEAL? Signing in with Google creates your account — there is no separate sign-up.",
+    ja: "はじめての方も、Googleでサインインすればそのままアカウントが作成されます。別途の登録は不要です。",
+    ko: "처음이신가요? Google로 로그인하면 계정이 바로 만들어집니다. 따로 가입할 필요가 없습니다.",
+    zh: "第一次使用？用 Google 登录即可创建账号，无需单独注册。",
+  },
+  "auth.signOut": { en: "Sign out", ja: "サインアウト", ko: "로그아웃", zh: "退出登录" },
+  "auth.signedInAs": { en: "Signed in as", ja: "サインイン中", ko: "로그인 계정", zh: "当前账号" },
+  "auth.account": { en: "Account", ja: "アカウント", ko: "계정", zh: "账号" },
+  "auth.demo.badge": { en: "Demo profile", ja: "デモプロフィール", ko: "데모 프로필", zh: "演示档案" },
+  "auth.demo.notice": {
+    en: "You are exploring as a demo profile. Sign in to build your own.",
+    ja: "現在はデモプロフィールで閲覧中です。サインインすると自分のプロフィールを作れます。",
+    ko: "지금은 데모 프로필로 둘러보는 중입니다. 로그인하면 내 프로필을 만들 수 있습니다.",
+    zh: "你正在以演示档案浏览。登录后即可建立自己的档案。",
+  },
+  "auth.notConfigured.title": {
+    en: "Google sign-in is not configured on this deployment",
+    ja: "この環境ではGoogleサインインが未設定です",
+    ko: "이 배포에는 Google 로그인이 설정되어 있지 않습니다",
+    zh: "此部署尚未配置 Google 登录",
+  },
+  "auth.notConfigured.body": {
+    en: "Add AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET and AUTH_SECRET to the environment. The README has the Google Cloud Console steps. Until then everything works against the demo profile.",
+    ja: "環境変数に AUTH_GOOGLE_ID、AUTH_GOOGLE_SECRET、AUTH_SECRET を設定してください。Google Cloud Console の手順はREADMEに記載しています。それまではデモプロフィールで全機能を試せます。",
+    ko: "환경 변수에 AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET, AUTH_SECRET을 추가하세요. Google Cloud Console 설정 절차는 README에 있습니다. 그때까지는 데모 프로필로 모든 기능을 사용할 수 있습니다.",
+    zh: "请在环境变量中配置 AUTH_GOOGLE_ID、AUTH_GOOGLE_SECRET 与 AUTH_SECRET。Google Cloud Console 的设置步骤见 README。在此之前可使用演示档案体验全部功能。",
+  },
+  "auth.exploreDemo": { en: "Keep exploring the demo", ja: "デモを見る", ko: "데모 계속 둘러보기", zh: "继续浏览演示" },
+  "auth.error.title": { en: "Could not complete sign-in", ja: "サインインを完了できませんでした", ko: "로그인을 완료하지 못했습니다", zh: "无法完成登录" },
+  "auth.error.body": {
+    en: "The request was cancelled or the redirect URI does not match the one registered in Google Cloud Console.",
+    ja: "リクエストがキャンセルされたか、リダイレクトURIがGoogle Cloud Consoleの登録内容と一致していません。",
+    ko: "요청이 취소되었거나, 리디렉션 URI가 Google Cloud Console에 등록된 값과 일치하지 않습니다.",
+    zh: "请求被取消，或重定向 URI 与 Google Cloud Console 中注册的不一致。",
+  },
+  "auth.privacy": {
+    en: "RE:VEAL reads your name, email address and profile picture from Google. Nothing is posted on your behalf.",
+    ja: "RE:VEALはGoogleから名前・メールアドレス・プロフィール画像のみを取得します。あなたに代わって投稿することはありません。",
+    ko: "RE:VEAL은 Google에서 이름, 이메일 주소, 프로필 사진만 가져옵니다. 대신 게시물을 올리지 않습니다.",
+    zh: "RE:VEAL 仅从 Google 读取你的姓名、邮箱与头像，不会代你发布任何内容。",
+  },
+
+  // ── Sign-up questions ───────────────────────────────────────────────────
+  "onboarding.welcome": { en: "Welcome, {name}", ja: "ようこそ、{name}さん", ko: "환영합니다, {name}님", zh: "欢迎，{name}" },
+  "onboarding.title": { en: "Tell RE:VEAL what you do", ja: "あなたの活動を教えてください", ko: "어떤 일을 하는지 알려주세요", zh: "告诉 RE:VEAL 你做什么" },
+  "onboarding.subtitle": {
+    en: "Every match score is built from these answers. Your Google account tells us your name — it cannot tell us what you make, or who you want to make it with.",
+    ja: "マッチのスコアはすべてこの回答から計算されます。Googleアカウントからわかるのは名前だけで、何を作るのか、誰と作りたいのかまではわかりません。",
+    ko: "모든 매치 점수는 이 답변에서 계산됩니다. Google 계정으로는 이름만 알 수 있을 뿐, 무엇을 만드는지, 누구와 만들고 싶은지는 알 수 없습니다.",
+    zh: "所有匹配分数都由这些回答算出。Google 账号只能告诉我们你的名字，无法说明你做什么、想和谁一起做。",
+  },
+  "onboarding.headline": { en: "One line about your work", ja: "あなたの活動を一言で", ko: "당신의 작업을 한 줄로", zh: "用一句话描述你的工作" },
+  "onboarding.headlinePlaceholder": {
+    en: "Beauty student building a colour-first makeup practice in Tokyo",
+    ja: "東京で色から考えるメイクを追求する美容学生",
+    ko: "도쿄에서 색부터 설계하는 메이크업을 공부하는 뷰티 학생",
+    zh: "在东京从色彩出发钻研妆容的美妆学生",
+  },
+  "onboarding.pickRole": { en: "What do you do?", ja: "何をしていますか？", ko: "어떤 일을 하시나요?", zh: "你的角色是什么？" },
+  "onboarding.pickCity": { en: "Where are you based?", ja: "拠点はどこですか？", ko: "어디에 계신가요?", zh: "你在哪座城市？" },
+  "onboarding.pickCategories": { en: "Which parts of beauty?", ja: "美容のどの分野ですか？", ko: "뷰티의 어떤 분야인가요?", zh: "属于美妆的哪些领域？" },
+  "onboarding.pickSkills": { en: "What are you good at?", ja: "得意なことは何ですか？", ko: "무엇을 잘하시나요?", zh: "你擅长什么？" },
+  "onboarding.pickOpenTo": { en: "What are you open to?", ja: "どんな機会を求めていますか？", ko: "어떤 기회에 열려 있나요?", zh: "你开放哪些合作？" },
+  "onboarding.pickTargets": { en: "Where would you like to work?", ja: "どこで働いてみたいですか？", ko: "어디에서 일해 보고 싶나요?", zh: "你想在哪里工作？" },
+  "onboarding.optional": { en: "Optional", ja: "任意", ko: "선택", zh: "选填" },
+  "onboarding.pickAtLeastOne": { en: "Choose at least one", ja: "1つ以上選んでください", ko: "하나 이상 선택하세요", zh: "请至少选择一项" },
+  "onboarding.submit": { en: "Create my profile", ja: "プロフィールを作成", ko: "프로필 만들기", zh: "创建我的档案" },
+  "onboarding.saving": { en: "Creating…", ja: "作成中…", ko: "생성 중…", zh: "创建中…" },
+  "onboarding.changeLater": {
+    en: "You can change all of this later in Settings.",
+    ja: "これらはあとから設定でいつでも変更できます。",
+    ko: "이 내용은 나중에 설정에서 언제든 바꿀 수 있습니다.",
+    zh: "以上内容之后都可以在设置中修改。",
+  },
+  "onboarding.matchPreview": {
+    en: "As soon as you save, RE:VEAL scores every person, brand, project and event against this.",
+    ja: "保存した瞬間から、RE:VEALがすべての人・ブランド・プロジェクト・イベントをこの内容で採点します。",
+    ko: "저장하는 순간부터 RE:VEAL이 모든 사람, 브랜드, 프로젝트, 이벤트를 이 기준으로 점수화합니다.",
+    zh: "保存后，RE:VEAL 会立即依据这些信息为每个人、品牌、项目与活动评分。",
+  },
+
+  // ── Empty states for a brand-new account ────────────────────────────────
+  "empty.newAccount.messages": {
+    en: "No conversations yet. Connect with someone or apply to a project, and your threads appear here.",
+    ja: "まだ会話はありません。誰かとつながるか、プロジェクトに応募すると、ここにスレッドが表示されます。",
+    ko: "아직 대화가 없습니다. 누군가와 연결하거나 프로젝트에 지원하면 여기에 스레드가 나타납니다.",
+    zh: "还没有对话。与他人建立连接或申请项目后，消息会出现在这里。",
+  },
+  "empty.newAccount.notifications": {
+    en: "Nothing yet. Matches, invitations and applications will land here.",
+    ja: "まだ通知はありません。マッチ・招待・応募の連絡がここに届きます。",
+    ko: "아직 알림이 없습니다. 매치, 초대, 지원 소식이 여기에 도착합니다.",
+    zh: "暂无通知。匹配、邀请与申请都会出现在这里。",
+  },
 } as const satisfies Record<string, Localized>;
 
 export type UIKey = keyof typeof UI_STRINGS;

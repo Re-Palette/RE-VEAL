@@ -124,6 +124,12 @@ export function MessagesView({
             />
           </div>
 
+          {threads.length === 0 && (
+            <p className="p-6 text-center text-[13px] leading-relaxed text-ink-50">
+              {t("empty.newAccount.messages")}
+            </p>
+          )}
+
           <ul className="min-h-0 flex-1 overflow-y-auto">
             {filtered.map((thread) => {
               const Icon = KIND_ICON[thread.kind];
