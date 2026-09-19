@@ -7,8 +7,8 @@ import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { ProjectCard } from "@/components/cards/project-card";
 import { ChipGroup, FilterPanel, MultiChipGroup } from "@/components/filters/chip-group";
 import { EmptyState } from "@/components/ui/misc";
+import { useI18n } from "@/lib/i18n/context";
 import { CITY_BY_ID } from "@/lib/data/geo";
-import { CATEGORY_LABELS, PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, REGION_LABELS, ROLE_LABELS } from "@/lib/labels";
 import {
   BEAUTY_CATEGORIES,
   PROJECT_TYPES,
@@ -24,22 +24,9 @@ import {
 
 type SortKey = "match" | "newest" | "starting" | "members";
 
-const SORTS: { value: SortKey; label: string }[] = [
-  { value: "match", label: "Best match" },
-  { value: "newest", label: "Newest" },
-  { value: "starting", label: "Starting soonest" },
-  { value: "members", label: "Most members" },
-];
-
-const STATUSES: { value: ProjectStatus | "all"; label: string }[] = [
-  { value: "all", label: "All projects" },
-  { value: "recruiting", label: PROJECT_STATUS_LABELS.recruiting },
-  { value: "in-progress", label: PROJECT_STATUS_LABELS["in-progress"] },
-  { value: "completed", label: PROJECT_STATUS_LABELS.completed },
-];
-
 export function ProjectsDirectory({ projects, matches }: { projects: Project[]; matches: MatchResult[] }) {
   const params = useSearchParams();
+  const { t, L, city: cityName } = useI18n();
   const cityFilter = params.get("city") ?? undefined;
 
   const [query, setQuery] = useState("");
@@ -52,6 +39,20 @@ export function ProjectsDirectory({ projects, matches }: { projects: Project[]; 
   const [roles, setRoles] = useState<Role[]>([]);
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("match");
+
+  const SORTS: { value: SortKey; label: string }[] = [
+    { value: "match", label: t("people.sort.match") },
+    { value: "newest", label: t("people.sort.newest") },
+    { value: "starting", label: t("projects.sort.starting") },
+    { value: "members", label: t("projects.sort.members") },
+  ];
+
+  const STATUSES: { value: ProjectStatus | "all"; label: string }[] = [
+    { value: "all", label: t("projects.filter.allProjects") },
+    { value: "recruiting", label: L.projectStatus.recruiting },
+    { value: "in-progress", label: L.projectStatus["in-progress"] },
+    { value: "completed", label: L.projectStatus.completed },
+  ];
 
   const scoreById = useMemo(() => new Map(matches.map((m) => [m.targetId, m])), [matches]);
 
@@ -75,7 +76,7 @@ export function ProjectsDirectory({ projects, matches }: { projects: Project[]; 
           project.code,
           project.summary,
           project.overview,
-          ...project.cityIds.map((c) => CITY_BY_ID.get(c)?.name ?? ""),
+          ...project.cityIds.map((c) => cityName(c)),
         ]
           .join(" ")
           .toLowerCase();
@@ -110,19 +111,19 @@ export function ProjectsDirectory({ projects, matches }: { projects: Project[]; 
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Connect"
-        title="Projects"
+        eyebrow={t("nav.connect")}
+        title={t("projects.title")}
         description={
           cityFilter
-            ? `Projects running in ${CITY_BY_ID.get(cityFilter)?.name}. Real briefs, real crews, real credits.`
-            : "Campaigns, photoshoots, product development and brand launches — most of them spanning more than one city."
+            ? t("projects.descriptionCity", { city: cityName(cityFilter) })
+            : t("projects.description")
         }
       />
 
       <FilterPanel
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search projects by title, city or brief…"
+        placeholder={t("projects.searchPlaceholder")}
         resultCount={filtered.length}
         activeCount={activeCount}
         onClear={() => {
@@ -138,27 +139,27 @@ export function ProjectsDirectory({ projects, matches }: { projects: Project[]; 
         advanced={
           <>
             <ChipGroup
-              label="Project type"
+              label={t("projects.filter.type")}
               tone="lavender"
               value={type}
               onChange={setType}
               options={[
-                { value: "all" as const, label: "Any type" },
-                ...PROJECT_TYPES.map((t) => ({ value: t, label: PROJECT_TYPE_LABELS[t] })),
+                { value: "all" as const, label: t("projects.filter.anyType") },
+                ...PROJECT_TYPES.map((type) => ({ value: type, label: L.projectType[type] })),
               ]}
             />
             <ChipGroup
-              label="Location"
+              label={t("common.location")}
               tone="sky"
               value={region}
               onChange={setRegion}
               options={[
-                { value: "all", label: "Worldwide" },
-                ...REGIONS.map((r) => ({ value: r as string, label: REGION_LABELS[r] })),
+                { value: "all", label: t("common.worldwide") },
+                ...REGIONS.map((r) => ({ value: r as string, label: L.region[r] })),
               ]}
             />
             <MultiChipGroup
-              label="Recruiting role"
+              label={t("projects.filter.recruitingRole")}
               tone="mint"
               values={roles}
               onToggle={(value) =>
@@ -166,40 +167,40 @@ export function ProjectsDirectory({ projects, matches }: { projects: Project[]; 
                   current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
                 )
               }
-              options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+              options={ROLES.map((r) => ({ value: r, label: L.role[r] }))}
             />
             <ChipGroup
-              label="Working style"
+              label={t("projects.filter.workingStyle")}
               tone="sky"
               value={remoteOnly ? "remote" : "any"}
               onChange={(value) => setRemoteOnly(value === "remote")}
               options={[
-                { value: "any", label: "Any" },
-                { value: "remote", label: "Remote friendly" },
+                { value: "any", label: t("common.any") },
+                { value: "remote", label: t("common.remoteFriendly") },
               ]}
             />
           </>
         }
       >
-        <ChipGroup label="Status" value={status} onChange={setStatus} options={STATUSES} />
+        <ChipGroup label={t("projects.filter.status")} value={status} onChange={setStatus} options={STATUSES} />
         <MultiChipGroup
-          label="Beauty category"
+          label={t("common.beautyCategory")}
           values={categories}
           onToggle={(value) =>
             setCategories((current) =>
               current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
             )
           }
-          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: L.category[c] }))}
         />
-        <ChipGroup label="Sort" value={sort} onChange={setSort} options={SORTS} />
+        <ChipGroup label={t("common.sort")} value={sort} onChange={setSort} options={SORTS} />
       </FilterPanel>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={Briefcase}
-          title="No projects match those filters"
-          description="Widen the category or region — or check the completed projects to see what has already been built here."
+          title={t("projects.empty.title")}
+          description={t("projects.empty.description")}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

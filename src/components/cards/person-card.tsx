@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { BadgeCheck, MapPin } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
@@ -5,9 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConnectButton } from "@/components/actions/connect-button";
 import { MatchBadge, MatchReasons } from "@/components/match/match-score";
+import { useI18n } from "@/lib/i18n/context";
 import { CITY_BY_ID, COUNTRY_BY_ID } from "@/lib/data/geo";
-import { skillLabel } from "@/lib/data/taxonomy";
-import { AVAILABILITY_LABELS, ROLE_LABELS } from "@/lib/labels";
 import type { ConnectionStatus, MatchResult, PersonView } from "@/lib/types";
 import { formatCount } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
@@ -21,8 +22,8 @@ export function PersonCard({
   match?: MatchResult;
   connection?: ConnectionStatus;
 }) {
-  const city = CITY_BY_ID.get(person.profile.cityId);
-  const country = COUNTRY_BY_ID.get(person.profile.countryId);
+  const { t, L, skill, city, country } = useI18n();
+  const countryId = CITY_BY_ID.get(person.profile.cityId)?.countryId ?? person.profile.countryId;
 
   return (
     <Card interactive className="flex h-full flex-col overflow-hidden">
@@ -39,12 +40,12 @@ export function PersonCard({
             {person.verified && <BadgeCheck className="size-4 shrink-0 text-sky" />}
           </div>
           <p className="mt-0.5 text-sm text-ink-50">
-            {ROLE_LABELS[person.profile.role]}
-            {person.profile.secondaryRoles[0] && ` · ${ROLE_LABELS[person.profile.secondaryRoles[0]]}`}
+            {L.role[person.profile.role]}
+            {person.profile.secondaryRoles[0] && ` · ${L.role[person.profile.secondaryRoles[0]]}`}
           </p>
           <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-50">
             <MapPin className="size-3.5 text-ink-30" />
-            {city?.name}, {country?.name} {country?.flag}
+            {city(person.profile.cityId)}, {country(countryId)} {COUNTRY_BY_ID.get(countryId)?.flag}
           </p>
           <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">{person.profile.headline}</p>
         </div>
@@ -54,7 +55,7 @@ export function PersonCard({
         <div className="mb-3 flex flex-wrap gap-1.5">
           {person.profile.skillIds.slice(0, 3).map((id) => (
             <Badge key={id} variant="lavender" size="sm">
-              {skillLabel(id)}
+              {skill(id)}
             </Badge>
           ))}
         </div>
@@ -62,9 +63,9 @@ export function PersonCard({
         {match && <MatchReasons reasons={match.reasons} limit={2} className="mb-3" />}
 
         <div className="flex items-center justify-between gap-2 border-t border-ink-08 pt-3.5">
-          <span className="min-w-0 text-[11px] text-ink-30">
-            {formatCount(person.profile.followers)} followers ·{" "}
-            <span className="text-mint">{AVAILABILITY_LABELS[person.profile.availability]}</span>
+          <span className="min-w-0 truncate text-[11px] text-ink-30">
+            {t("common.followers", { count: formatCount(person.profile.followers) })} ·{" "}
+            <span className="text-mint">{L.availability[person.profile.availability]}</span>
           </span>
           <ConnectButton initialStatus={connection} name={person.name} />
         </div>
@@ -75,7 +76,7 @@ export function PersonCard({
 
 /** Dense row used in sidebars and detail pages. */
 export function PersonRow({ person, match }: { person: PersonView; match?: MatchResult }) {
-  const city = CITY_BY_ID.get(person.profile.cityId);
+  const { L, city } = useI18n();
   return (
     <Link
       href={`/people/${person.id}`}
@@ -88,7 +89,7 @@ export function PersonRow({ person, match }: { person: PersonView; match?: Match
           {person.verified && <BadgeCheck className="size-3.5 shrink-0 text-sky" />}
         </span>
         <span className="block truncate text-xs text-ink-50">
-          {ROLE_LABELS[person.profile.role]} · {city?.name}
+          {L.role[person.profile.role]} · {city(person.profile.cityId)}
         </span>
       </span>
       {match && <MatchBadge score={match.score} />}

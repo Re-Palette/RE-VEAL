@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { connectionStatusFor } from "@/lib/data/social";
 import { MatchBoard } from "@/app/match/match-board";
 import { ListingSkeleton } from "@/components/ui/skeletons";
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MatchPage() {
+  const i18n = await getI18n();
   const [viewer, people, brands, projects, events] = await Promise.all([
     db.getCurrentUser(),
     db.listPeople(),
@@ -20,10 +22,10 @@ export default async function MatchPage() {
   ]);
 
   const [person, brand, project, event] = await Promise.all([
-    db.matchesFor("person", 24),
-    db.matchesFor("brand", 16),
-    db.matchesFor("project", 16),
-    db.matchesFor("event", 16),
+    db.matchesFor("person", 24, i18n.language),
+    db.matchesFor("brand", 16, i18n.language),
+    db.matchesFor("project", 16, i18n.language),
+    db.matchesFor("event", 16, i18n.language),
   ]);
 
   const others = people.filter((p) => p.id !== viewer.id);

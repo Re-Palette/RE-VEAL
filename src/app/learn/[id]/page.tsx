@@ -10,7 +10,8 @@ import { Card } from "@/components/ui/card";
 import { SaveButton } from "@/components/actions/save-button";
 import { CourseCard } from "@/components/cards/content-cards";
 import { db } from "@/lib/data-source";
-import { LANGUAGE_LABELS, LEARN_TRACK_LABELS, ROLE_LABELS } from "@/lib/labels";
+import { getI18n } from "@/lib/i18n/server";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { formatCount } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 import type { Lesson } from "@/lib/types";
@@ -35,6 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function CoursePage({ params }: { params: Promise<{ id: string }> }) {
+  const i18n = await getI18n();
   const { id } = await params;
   const course = await db.getCourse(id);
   if (!course) notFound();
@@ -54,7 +56,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
         <div className="relative h-28 sm:h-32" style={gradientStyle(course.coverSeed)}>
           <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
           <Badge variant="ink" size="md" className="absolute left-5 top-5 sm:left-8">
-            {LEARN_TRACK_LABELS[course.track]}
+            {i18n.L.learnTrack[course.track]}
           </Badge>
         </div>
 
@@ -67,13 +69,13 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
               <p className="mt-3 text-[15px] leading-relaxed text-ink-70">{course.summary}</p>
 
               <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-sm text-ink-50">
-                <span className="inline-flex items-center gap-1.5 capitalize">
+                <span className="inline-flex items-center gap-1.5">
                   <BookOpen className="size-4 text-ink-30" />
-                  {course.level}
+                  {i18n.L.courseLevel[course.level]}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Clock className="size-4 text-ink-30" />
-                  {hours}h {minutes}m · {course.lessons.length} lessons
+                  {i18n.t("learn.lessonCount", { hours, minutes, count: course.lessons.length })}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Star className="size-4 fill-gold text-gold" />
@@ -81,7 +83,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Users className="size-4 text-ink-30" />
-                  {formatCount(course.enrolled)} enrolled
+                  {i18n.t("learn.enrolled", { count: formatCount(course.enrolled) })}
                 </span>
                 <span>{course.languages.map((l) => LANGUAGE_LABELS[l]).join(" · ")}</span>
               </div>
@@ -89,7 +91,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
 
             <div className="flex flex-col gap-2">
               <Button variant="accent" size="lg">
-                Start course
+                {i18n.t("learn.startCourse")}
               </Button>
               <SaveButton size="sm" />
             </div>
@@ -100,11 +102,13 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-8">
         <div className="min-w-0 space-y-6">
           <Card className="p-6 sm:p-8">
-            <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">About this course</h2>
+            <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">
+              {i18n.t("learn.about")}
+            </h2>
             <p className="text-[15px] leading-[1.75] text-ink-70">{course.description}</p>
 
             <h3 className="mb-3 mt-7 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-              What you will be able to do
+              {i18n.t("learn.outcomes")}
             </h3>
             <ul className="space-y-2.5">
               {course.outcomes.map((outcome) => (
@@ -117,7 +121,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           </Card>
 
           <Card className="p-6 sm:p-8">
-            <h2 className="mb-5 font-display text-lg font-semibold tracking-[-0.02em]">Lessons</h2>
+            <h2 className="mb-5 font-display text-lg font-semibold tracking-[-0.02em]">{i18n.t("learn.lessons")}</h2>
             <ol className="divide-y divide-ink-08">
               {course.lessons.map((lesson, index) => {
                 const Icon = LESSON_ICON[lesson.kind];
@@ -129,9 +133,11 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                     <Icon className="size-4 shrink-0 text-lavender" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{lesson.title}</span>
-                      <span className="block text-xs capitalize text-ink-30">{lesson.kind}</span>
+                      <span className="block text-xs text-ink-30">{i18n.L.lessonKind[lesson.kind]}</span>
                     </span>
-                    <span className="shrink-0 text-xs text-ink-50">{lesson.minutes} min</span>
+                    <span className="shrink-0 text-xs text-ink-50">
+                      {i18n.t("learn.minutes", { count: lesson.minutes })}
+                    </span>
                   </li>
                 );
               })}
@@ -142,13 +148,15 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
         <aside className="space-y-5">
           {instructor && (
             <Card className="p-5">
-              <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Taught by</h2>
+              <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+                {i18n.t("learn.taughtBy")}
+              </h2>
               <Link href={`/people/${instructor.id}`} className="flex items-center gap-3">
                 <Avatar seed={instructor.avatarSeed} name={instructor.name} size="lg" />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold">{instructor.name}</span>
                   <span className="block truncate text-xs text-ink-50">
-                    {ROLE_LABELS[instructor.profile.role]}
+                    {i18n.L.role[instructor.profile.role]}
                   </span>
                 </span>
               </Link>
@@ -159,7 +167,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           {related.length > 0 && (
             <div>
               <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                More in {LEARN_TRACK_LABELS[course.track]}
+                More in {i18n.L.learnTrack[course.track]}
               </h2>
               <div className="space-y-4">
                 {related.map((other) => (

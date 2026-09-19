@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipGroup } from "@/components/filters/chip-group";
 import { EmptyState } from "@/components/ui/misc";
-import { NOTIFICATION_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
 import type { Brand, Notification, NotificationKind, PersonView } from "@/lib/types";
 import { cn, relativeTime } from "@/lib/utils";
 
@@ -47,6 +47,7 @@ export function NotificationsView({
   people: PersonView[];
   brands: Brand[];
 }) {
+  const { t, L } = useI18n();
   const [read, setRead] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -66,9 +67,9 @@ export function NotificationsView({
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Personal"
-        title="Notifications"
-        description="Matches, invitations, applications and collaboration requests — everything that needs a decision from you."
+        eyebrow={t("nav.personal")}
+        title={t("notifications.title")}
+        description={t("notifications.description")}
         action={
           unreadCount > 0 ? (
             <Button
@@ -77,7 +78,7 @@ export function NotificationsView({
               onClick={() => setRead(Object.fromEntries(notifications.map((n) => [n.id, true])))}
             >
               <Check />
-              Mark all read
+              {t("notifications.markAllRead")}
             </Button>
           ) : undefined
         }
@@ -88,19 +89,25 @@ export function NotificationsView({
           value={filter}
           onChange={setFilter}
           options={[
-            { value: "all" as const, label: "All" },
-            { value: "unread" as const, label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
-            { value: "match" as const, label: NOTIFICATION_LABELS.match },
-            { value: "project-invitation" as const, label: NOTIFICATION_LABELS["project-invitation"] },
-            { value: "brand-collaboration" as const, label: NOTIFICATION_LABELS["brand-collaboration"] },
-            { value: "event-reminder" as const, label: NOTIFICATION_LABELS["event-reminder"] },
-            { value: "message" as const, label: NOTIFICATION_LABELS.message },
+            { value: "all" as const, label: t("notifications.filter.all") },
+            {
+              value: "unread" as const,
+              label:
+                unreadCount > 0
+                  ? t("notifications.filter.unreadCount", { count: unreadCount })
+                  : t("notifications.filter.unread"),
+            },
+            { value: "match" as const, label: L.notification.match },
+            { value: "project-invitation" as const, label: L.notification["project-invitation"] },
+            { value: "brand-collaboration" as const, label: L.notification["brand-collaboration"] },
+            { value: "event-reminder" as const, label: L.notification["event-reminder"] },
+            { value: "message" as const, label: L.notification.message },
           ]}
         />
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Bell} title="Nothing here" description="You are all caught up." />
+        <EmptyState icon={Bell} title={t("notifications.empty.title")} description={t("notifications.empty.description")} />
       ) : (
         <Card className="divide-y divide-ink-08 overflow-hidden">
           {filtered.map((notification) => {
@@ -133,7 +140,7 @@ export function NotificationsView({
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={unread ? "lavender" : "default"} size="sm">
                       <Icon className="size-3" />
-                      {NOTIFICATION_LABELS[notification.kind]}
+                      {L.notification[notification.kind]}
                     </Badge>
                     <span className="text-[11px] text-ink-30">{relativeTime(notification.createdAt)}</span>
                   </div>

@@ -10,21 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/misc";
-import { CATEGORY_LABELS, OPEN_TO_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
 import { formatCount } from "@/lib/utils";
 import type { PersonView, PortfolioItem } from "@/lib/types";
 
 type KindFilter = PortfolioItem["kind"] | "all";
-
-const KINDS: { value: KindFilter; label: string }[] = [
-  { value: "all", label: "Everything" },
-  { value: "work", label: "Work" },
-  { value: "project", label: "Projects" },
-  { value: "campaign", label: "Campaigns" },
-  { value: "editorial", label: "Editorial" },
-  { value: "product", label: "Product" },
-  { value: "award", label: "Awards" },
-];
 
 /**
  * Portfolio is the payoff of the whole product: what you have actually done in
@@ -39,7 +29,18 @@ export function PortfolioView({
   items: PortfolioItem[];
   community: PortfolioItem[];
 }) {
+  const { t, L } = useI18n();
   const [kind, setKind] = useState<KindFilter>("all");
+
+  const KINDS: { value: KindFilter; label: string }[] = [
+    { value: "all", label: t("portfolio.filter.everything") },
+    { value: "work", label: L.portfolioKind.work },
+    { value: "project", label: L.portfolioKind.project },
+    { value: "campaign", label: L.portfolioKind.campaign },
+    { value: "editorial", label: L.portfolioKind.editorial },
+    { value: "product", label: L.portfolioKind.product },
+    { value: "award", label: L.portfolioKind.award },
+  ];
 
   const filtered = useMemo(
     () => (kind === "all" ? items : items.filter((item) => item.kind === kind)),
@@ -53,18 +54,18 @@ export function PortfolioView({
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Grow"
-        title="Portfolio"
-        description="Not a feed of posts — a record of what you have made, who you made it with, and what it was for."
+        eyebrow={t("nav.grow")}
+        title={t("portfolio.title")}
+        description={t("portfolio.description")}
         action={
           <>
             <Button variant="outline" size="md">
               <Share2 />
-              Share
+              {t("common.share")}
             </Button>
             <Button variant="primary" size="md">
               <Download />
-              Export PDF
+              {t("portfolio.exportPdf")}
             </Button>
           </>
         }
@@ -74,7 +75,7 @@ export function PortfolioView({
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <h2 className="font-display text-xl font-semibold tracking-[-0.025em]">
-              {viewer.name} — {items.length} published {items.length === 1 ? "piece" : "pieces"}
+              {t("portfolio.summary", { name: viewer.name, count: items.length })}
             </h2>
             <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-ink-70">
               This is what a brand, a project lead or a course sees when you apply. Everything here links back
@@ -83,7 +84,7 @@ export function PortfolioView({
             <div className="mt-4 flex flex-wrap gap-1.5">
               {categories.map((c) => (
                 <Badge key={c} variant="lavender" size="sm">
-                  {CATEGORY_LABELS[c]}
+                  {L.category[c]}
                 </Badge>
               ))}
             </div>
@@ -91,9 +92,9 @@ export function PortfolioView({
 
           <dl className="grid grid-cols-3 gap-6">
             {[
-              ["Pieces", String(items.length)],
-              ["Reactions", formatCount(totalReactions)],
-              ["Years", String(years)],
+              [t("portfolio.stats.pieces"), String(items.length)],
+              [t("portfolio.stats.reactions"), formatCount(totalReactions)],
+              [t("portfolio.stats.years"), String(years)],
             ].map(([label, value]) => (
               <div key={label}>
                 <dd className="font-display text-2xl font-semibold tracking-[-0.03em]">{value}</dd>
@@ -105,12 +106,12 @@ export function PortfolioView({
 
         <div className="mt-6 border-t border-ink-08 pt-5">
           <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-30">
-            This portfolio is visible to brands looking for
+            {t("portfolio.visibleTo")}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {viewer.profile.openTo.map((o) => (
               <Badge key={o} variant="mint" size="md">
-                {OPEN_TO_LABELS[o]}
+                {L.openTo[o]}
               </Badge>
             ))}
           </div>
@@ -124,11 +125,11 @@ export function PortfolioView({
       {filtered.length === 0 ? (
         <EmptyState
           icon={LayoutGrid}
-          title="Nothing here yet"
-          description="Join a project and the work you do on it lands here automatically, with credits attached."
+          title={t("portfolio.empty.title")}
+          description={t("portfolio.empty.description")}
           action={
             <Button asChild variant="accent">
-              <Link href="/projects?status=recruiting">Find a project</Link>
+              <Link href="/projects?status=recruiting">{t("portfolio.empty.action")}</Link>
             </Button>
           }
         />
@@ -144,17 +145,17 @@ export function PortfolioView({
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-30">
-              From the community
+              {t("portfolio.community.eyebrow")}
             </p>
             <h2 className="font-display text-xl font-semibold tracking-[-0.02em]">
-              Work published this month
+              {t("portfolio.community.title")}
             </h2>
           </div>
           <Link
             href="/discover"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-70 transition-colors hover:text-lavender"
           >
-            Discover more
+            {t("portfolio.community.link")}
             <ArrowRight className="size-4" />
           </Link>
         </div>

@@ -1,5 +1,5 @@
 import type { LanguageCode } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/labels";
+import { LANGUAGE_LABELS } from "@/lib/i18n/labels-enums";
 
 /**
  * Content translation seam.

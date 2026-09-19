@@ -1,4 +1,5 @@
 import type { BeautyCategory, MatchResult } from "@/lib/types";
+import type { UIKey } from "@/lib/i18n";
 
 /**
  * A flattened, serialisable view of everything the map can plot.
@@ -27,15 +28,15 @@ export interface MapEntity {
 }
 
 export const AUDIENCE_FILTERS = [
-  { id: "all", label: "All" },
-  { id: "people", label: "People" },
-  { id: "creators", label: "Creators" },
-  { id: "brands", label: "Brands" },
-  { id: "projects", label: "Projects" },
-  { id: "events", label: "Events" },
-  { id: "students", label: "Students" },
-  { id: "professionals", label: "Professionals" },
-] as const;
+  { id: "all", labelKey: "map.audience.all" },
+  { id: "people", labelKey: "map.audience.people" },
+  { id: "creators", labelKey: "map.audience.creators" },
+  { id: "brands", labelKey: "map.audience.brands" },
+  { id: "projects", labelKey: "map.audience.projects" },
+  { id: "events", labelKey: "map.audience.events" },
+  { id: "students", labelKey: "map.audience.students" },
+  { id: "professionals", labelKey: "map.audience.professionals" },
+] as const satisfies readonly { id: string; labelKey: UIKey }[];
 
 export type AudienceFilter = (typeof AUDIENCE_FILTERS)[number]["id"];
 

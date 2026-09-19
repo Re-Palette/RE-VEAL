@@ -13,12 +13,12 @@ import type { PersonView } from "@/lib/types";
 export function AppShell({
   viewer,
   counts,
-  cityName,
+  cityId,
   children,
 }: {
   viewer: PersonView;
   counts: SidebarCounts;
-  cityName: string;
+  cityId: string;
   children: React.ReactNode;
 }) {
   return (
@@ -32,7 +32,7 @@ export function AppShell({
         </div>
 
         <div className="sticky top-0 h-dvh">
-          <Sidebar viewer={viewer} counts={counts} cityName={cityName} />
+          <Sidebar viewer={viewer} counts={counts} cityId={cityId} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">

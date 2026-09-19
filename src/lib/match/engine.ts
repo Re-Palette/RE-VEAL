@@ -1,6 +1,6 @@
 import { CITY_BY_ID } from "@/lib/data/geo";
 import { SKILL_BY_ID } from "@/lib/data/taxonomy";
-import { AVAILABILITY_LABELS, CATEGORY_LABELS, ROLE_LABELS } from "@/lib/labels";
+import type { I18n } from "@/lib/i18n";
 import type {
   BeautyEvent,
   Brand,
@@ -20,8 +20,8 @@ import { clamp, overlapCount } from "@/lib/utils";
  * The rules are deliberately explicit and additive rather than a single opaque
  * similarity number, because RE:VEAL always has to answer "why did this match?"
  * on screen. Each rule contributes points and, when it fires, a reason the UI
- * can render. Swapping in an LLM later means implementing MatchProvider — the
- * shape of what comes out does not change.
+ * can render. Every string it produces goes through `i18n`, so the reasoning is
+ * readable in whichever language the viewer has chosen.
  */
 
 interface Rule {
@@ -47,11 +47,6 @@ function reason(kind: MatchReason["kind"], label: string, weight: number): Match
   return { kind, label, weight };
 }
 
-function listPhrase(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? "";
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
-}
-
 type LocationContext = "person" | "brand" | "project" | "event";
 
 /**
@@ -59,23 +54,28 @@ type LocationContext = "person" | "brand" | "project" | "event";
  * Tokyo is not "based in Tokyo", and a three-city project is not "in" any one
  * of them. The context decides the phrasing; the scoring is the same.
  */
-function locationRule(viewer: Profile, cityIds: string[], max: number, context: LocationContext): Rule {
+function locationRule(
+  viewer: Profile,
+  cityIds: string[],
+  max: number,
+  context: LocationContext,
+  i18n: I18n,
+): Rule {
   const unique = Array.from(new Set(cityIds));
   const wanted = unique.filter((id) => viewer.targetCityIds.includes(id));
-  const viewerCity = CITY_BY_ID.get(viewer.cityId)?.name ?? viewer.cityId;
 
   if (wanted.length > 0) {
-    const names = wanted.map((id) => CITY_BY_ID.get(id)?.name ?? id);
+    const names = wanted.map((id) => i18n.city(id));
     const includesHome = wanted.includes(viewer.cityId);
     let label: string;
     if (context === "project" && unique.length > 1) {
-      label = unique.map((id) => CITY_BY_ID.get(id)?.name ?? id).join(" × ");
+      label = unique.map((id) => i18n.city(id)).join(" × ");
     } else if (context === "brand") {
-      label = `Active in ${listPhrase(names.slice(0, 3))}`;
+      label = i18n.t("reason.location.brandActive", { cities: i18n.list(names.slice(0, 3)) });
     } else if (includesHome) {
-      label = `In ${viewerCity}, where you are`;
+      label = i18n.t("reason.location.home", { city: i18n.city(viewer.cityId) });
     } else {
-      label = `${listPhrase(names.slice(0, 2))} — on your target list`;
+      label = i18n.t("reason.location.target", { cities: i18n.list(names.slice(0, 2)) });
     }
     return { points: max, max, reason: reason("location", label, 90) };
   }
@@ -83,17 +83,17 @@ function locationRule(viewer: Profile, cityIds: string[], max: number, context: 
   const regions = new Set(unique.map((id) => CITY_BY_ID.get(id)?.region).filter(Boolean));
   const viewerRegion = CITY_BY_ID.get(viewer.cityId)?.region;
   if (viewerRegion && regions.has(viewerRegion)) {
-    return { points: max * 0.5, max, reason: reason("location", "Same region as you", 55) };
+    return { points: max * 0.5, max, reason: reason("location", i18n.t("reason.location.sameRegion"), 55) };
   }
   return { points: max * 0.15, max };
 }
 
-function categoryRule(viewer: Profile, categories: string[], max: number): Rule {
+function categoryRule(viewer: Profile, categories: string[], max: number, i18n: I18n): Rule {
   const shared = categories.filter((c) => (viewer.categories as string[]).includes(c));
   if (shared.length === 0) return { points: 0, max };
   const label = shared
     .slice(0, 3)
-    .map((c) => CATEGORY_LABELS[c as keyof typeof CATEGORY_LABELS] ?? c)
+    .map((c) => i18n.L.category[c as keyof typeof i18n.L.category] ?? c)
     .join(" · ");
   // Proportional to how much of the target's own profile you cover, not to how
   // much of yours they cover — otherwise a narrow target scores full marks
@@ -105,24 +105,36 @@ function categoryRule(viewer: Profile, categories: string[], max: number): Rule 
   };
 }
 
-function skillRule(viewer: Profile, skillIds: string[], max: number, label = "Shared skills"): Rule {
+function skillRule(
+  viewer: Profile,
+  skillIds: string[],
+  max: number,
+  i18n: I18n,
+  key: "reason.skill.shared" | "reason.skill.required" = "reason.skill.shared",
+): Rule {
   const shared = skillIds.filter((s) => viewer.skillIds.includes(s));
   if (shared.length === 0) return { points: 0, max };
-  const names = shared.slice(0, 3).map((s) => SKILL_BY_ID.get(s)?.label ?? s);
+  const names = shared.slice(0, 3).map((s) => i18n.skill(s));
   return {
     points: (shared.length / skillIds.length) * max,
     max,
-    reason: reason("skill", `${label}: ${names.join(", ")}`, 95),
+    reason: reason("skill", i18n.t(key, { skills: i18n.list(names) }), 95),
   };
 }
 
-function languageRule(viewer: Profile, languages: string[], max: number): Rule {
+function languageRule(viewer: Profile, languages: string[], max: number, i18n: I18n): Rule {
   const shared = languages.filter((l) => (viewer.languages as string[]).includes(l));
   if (shared.length === 0) return { points: 0, max };
   return {
     points: (shared.length / languages.length) * max,
     max,
-    reason: reason("language", `You share ${shared.length} language${shared.length > 1 ? "s" : ""}`, 60),
+    reason: reason(
+      "language",
+      shared.length > 1
+        ? i18n.t("reason.language.shared", { count: shared.length })
+        : i18n.t("reason.language.sharedOne"),
+      60,
+    ),
   };
 }
 
@@ -130,7 +142,7 @@ function languageRule(viewer: Profile, languages: string[], max: number): Rule {
 /* Person → Person                                                            */
 /* -------------------------------------------------------------------------- */
 
-export function scorePerson(viewer: PersonView, target: PersonView): MatchResult {
+export function scorePerson(viewer: PersonView, target: PersonView, i18n: I18n): MatchResult {
   const v = viewer.profile;
   const t = target.profile;
 
@@ -153,8 +165,8 @@ export function scorePerson(viewer: PersonView, target: PersonView): MatchResult
   });
 
   const rules: Rule[] = [
-    categoryRule(v, t.categories, 22),
-    skillRule(v, t.skillIds, 16),
+    categoryRule(v, t.categories, 22, i18n),
+    skillRule(v, t.skillIds, 16, i18n),
     {
       points: complementary.length > 0 ? Math.min(12, complementary.length * 3) : 0,
       max: 12,
@@ -162,44 +174,55 @@ export function scorePerson(viewer: PersonView, target: PersonView): MatchResult
         complementary.length > 0
           ? reason(
               "skill",
-              `Complementary: ${complementary
-                .slice(0, 2)
-                .map((s) => SKILL_BY_ID.get(s)?.label ?? s)
-                .join(", ")}`,
+              i18n.t("reason.skill.complementary", {
+                skills: i18n.list(complementary.slice(0, 2).map((s) => i18n.skill(s))),
+              }),
               80,
             )
           : undefined,
     },
-    locationRule(v, [t.cityId], 20, "person"),
-    languageRule(v, t.languages, 12),
+    locationRule(v, [t.cityId], 20, "person", i18n),
+    languageRule(v, t.languages, 12, i18n),
     {
       points: interestShared > 0 ? Math.min(14, interestShared * 4) : 0,
       max: 14,
-      reason: interestShared > 0 ? reason("interest", `${interestShared} shared interests`, 70) : undefined,
+      reason:
+        interestShared > 0
+          ? reason("interest", i18n.t("reason.interest.shared", { count: interestShared }), 70)
+          : undefined,
     },
     {
       points: openToShared.length > 0 ? Math.min(12, openToShared.length * 4) : 0,
       max: 12,
       reason:
         openToShared.length > 0
-          ? reason("opportunity", `Both open to ${openToShared[0].replace(/-/g, " ")}`, 75)
+          ? reason(
+              "opportunity",
+              i18n.t("reason.opportunity.bothOpen", { what: i18n.L.openTo[openToShared[0]] }),
+              75,
+            )
           : undefined,
     },
     {
       points: t.availability === "open-now" ? 10 : t.availability === "next-month" ? 6 : 2,
       max: 10,
-      reason: t.availability === "open-now" ? reason("availability", "Available now", 50) : undefined,
+      reason:
+        t.availability === "open-now"
+          ? reason("availability", i18n.t("reason.availability.openNow"), 50)
+          : undefined,
     },
     {
       points: mentorshipFit ? 12 : 0,
       max: 12,
-      reason: mentorshipFit ? reason("experience", `${ROLE_LABELS[t.role]} open to mentorship`, 78) : undefined,
+      reason: mentorshipFit
+        ? reason("experience", i18n.t("reason.experience.mentorship", { role: i18n.L.role[t.role] }), 78)
+        : undefined,
     },
     {
       points: t.targetCityIds.includes(v.cityId) ? 10 : 0,
       max: 10,
       reason: t.targetCityIds.includes(v.cityId)
-        ? reason("goal", `Wants to work in ${CITY_BY_ID.get(v.cityId)?.name}`, 88)
+        ? reason("goal", i18n.t("reason.goal.wantsCity", { city: i18n.city(v.cityId) }), 88)
         : undefined,
     },
   ];
@@ -211,71 +234,78 @@ export function scorePerson(viewer: PersonView, target: PersonView): MatchResult
     targetId: target.id,
     score,
     reasons,
-    narrative: personNarrative(viewer, target),
+    narrative: personNarrative(viewer, target, i18n),
   };
 }
 
 /**
  * Built from the underlying data rather than by stitching reason labels
  * together — reason labels are written for chips, and read badly in a sentence.
+ * Each clause is a complete sentence so the three languages that do not join
+ * clauses the way English does still come out grammatical.
  */
-function personNarrative(viewer: PersonView, target: PersonView): string {
+function personNarrative(viewer: PersonView, target: PersonView, i18n: I18n): string {
   const v = viewer.profile;
   const t = target.profile;
 
-  const sharedSkills = t.skillIds
-    .filter((s) => v.skillIds.includes(s))
-    .map((s) => SKILL_BY_ID.get(s)?.label ?? s);
-  const sharedCategories = t.categories.filter((c) => v.categories.includes(c)).map((c) => CATEGORY_LABELS[c]);
-  const targetCity = CITY_BY_ID.get(t.cityId)?.name ?? "";
-  const viewerCity = CITY_BY_ID.get(v.cityId)?.name ?? "";
+  const sharedSkills = t.skillIds.filter((s) => v.skillIds.includes(s)).map((s) => i18n.skill(s));
+  const sharedCategories = t.categories.filter((c) => v.categories.includes(c)).map((c) => i18n.L.category[c]);
 
-  const clauses: string[] = [];
-  if (sharedSkills.length > 0) {
-    clauses.push(`shares ${listPhrase(sharedSkills.slice(0, 2))} with you`);
-  } else if (sharedCategories.length > 0) {
-    clauses.push(`works in ${listPhrase(sharedCategories.slice(0, 2))}, like you`);
-  }
+  const what =
+    sharedSkills.length > 0
+      ? i18n.t("narrative.person.skills", { name: target.name, skills: i18n.list(sharedSkills.slice(0, 2)) })
+      : sharedCategories.length > 0
+        ? i18n.t("narrative.person.categories", {
+            name: target.name,
+            categories: i18n.list(sharedCategories.slice(0, 2)),
+          })
+        : i18n.t("narrative.person.different", { name: target.name });
 
-  if (t.targetCityIds.includes(v.cityId) && v.cityId !== t.cityId) {
-    clauses.push(`wants to work in ${viewerCity}`);
-  } else if (t.cityId === v.cityId) {
-    clauses.push(`is in ${targetCity} too`);
-  } else if (v.targetCityIds.includes(t.cityId)) {
-    clauses.push(`is based in ${targetCity}, a city on your list`);
-  } else {
-    clauses.push(`is based in ${targetCity}`);
-  }
+  const where =
+    t.targetCityIds.includes(v.cityId) && v.cityId !== t.cityId
+      ? i18n.t("narrative.person.wantsCity", { city: i18n.city(v.cityId) })
+      : t.cityId === v.cityId
+        ? i18n.t("narrative.person.sameCity", { city: i18n.city(t.cityId) })
+        : v.targetCityIds.includes(t.cityId)
+          ? i18n.t("narrative.person.targetCity", { city: i18n.city(t.cityId) })
+          : i18n.t("narrative.person.basedIn", { city: i18n.city(t.cityId) });
 
   const availability =
     t.availability === "open-now"
-      ? "Open to new work right now."
-      : `Currently ${AVAILABILITY_LABELS[t.availability].toLowerCase()}.`;
+      ? i18n.t("narrative.person.openNow")
+      : i18n.t("narrative.person.currently", { availability: i18n.L.availability[t.availability] });
 
-  return `${target.name} ${listPhrase(clauses)}. ${availability}`;
+  return i18n.sentences([what, where, availability]);
 }
 
 /* -------------------------------------------------------------------------- */
 /* Person → Brand                                                             */
 /* -------------------------------------------------------------------------- */
 
-export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
+export function scoreBrand(viewer: PersonView, brand: Brand, i18n: I18n): MatchResult {
   const v = viewer.profile;
   const roles = [v.role, ...v.secondaryRoles];
   const roleMatch = brand.lookingFor.filter((r) => roles.includes(r));
   const openRoles = brand.openOpportunities.flatMap((o) => o.roles).filter((r) => roles.includes(r));
   const marketOverlap = brand.marketCityIds.filter((c) => v.targetCityIds.includes(c));
+  const openCount = brand.openOpportunities.length;
 
   const rules: Rule[] = [
-    categoryRule(v, brand.categories, 24),
-    locationRule(v, [brand.cityId, ...brand.marketCityIds], 20, "brand"),
-    languageRule(v, brand.languages, 12),
+    categoryRule(v, brand.categories, 24, i18n),
+    locationRule(v, [brand.cityId, ...brand.marketCityIds], 20, "brand", i18n),
+    languageRule(v, brand.languages, 12, i18n),
     {
-      points: (roleMatch.length / brand.lookingFor.length) * 20,
+      points: (roleMatch.length / Math.max(1, brand.lookingFor.length)) * 20,
       max: 20,
       reason:
         roleMatch.length > 0
-          ? reason("opportunity", `Looking for ${roleMatch.map((r) => ROLE_LABELS[r]).slice(0, 2).join(" and ")}`, 96)
+          ? reason(
+              "opportunity",
+              i18n.t("reason.opportunity.lookingFor", {
+                roles: i18n.list(roleMatch.slice(0, 2).map((r) => i18n.L.role[r])),
+              }),
+              96,
+            )
           : undefined,
     },
     {
@@ -283,7 +313,13 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
       max: 16,
       reason:
         openRoles.length > 0
-          ? reason("opportunity", `${brand.openOpportunities.length} open opportunit${brand.openOpportunities.length === 1 ? "y" : "ies"}`, 92)
+          ? reason(
+              "opportunity",
+              openCount === 1
+                ? i18n.t("reason.opportunity.openCountOne")
+                : i18n.t("reason.opportunity.openCount", { count: openCount }),
+              92,
+            )
           : undefined,
     },
     {
@@ -293,7 +329,9 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
         marketOverlap.length > 0
           ? reason(
               "goal",
-              `Active in ${marketOverlap.slice(0, 2).map((c) => CITY_BY_ID.get(c)?.name).join(" and ")}`,
+              i18n.t("reason.location.brandActive", {
+                cities: i18n.list(marketOverlap.slice(0, 2).map((c) => i18n.city(c))),
+              }),
               84,
             )
           : undefined,
@@ -302,7 +340,7 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
       points: v.openTo.includes("brand-partnership") ? 10 : 4,
       max: 10,
       reason: v.openTo.includes("brand-partnership")
-        ? reason("opportunity", "You are open to brand partnership", 58)
+        ? reason("opportunity", i18n.t("reason.opportunity.youOpenBrand"), 58)
         : undefined,
     },
     {
@@ -310,7 +348,7 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
       max: 10,
       reason:
         brand.type === "student-brand" && v.experience === "student"
-          ? reason("experience", "Student-run brand", 66)
+          ? reason("experience", i18n.t("reason.experience.studentBrand"), 66)
           : undefined,
     },
   ];
@@ -324,8 +362,14 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
     reasons,
     narrative:
       openRoles.length > 0
-        ? `${brand.name} is actively looking for ${openRoles.slice(0, 2).map((r) => ROLE_LABELS[r]).join(" and ")} — which is what you do.`
-        : `${brand.name} works in ${brand.categories.map((c) => CATEGORY_LABELS[c]).slice(0, 2).join(" and ")}, overlapping with your focus.`,
+        ? i18n.t("narrative.brand.looking", {
+            name: brand.name,
+            roles: i18n.list(openRoles.slice(0, 2).map((r) => i18n.L.role[r])),
+          })
+        : i18n.t("narrative.brand.overlap", {
+            name: brand.name,
+            categories: i18n.list(brand.categories.slice(0, 2).map((c) => i18n.L.category[c])),
+          }),
   };
 }
 
@@ -333,7 +377,7 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
 /* Person → Project                                                           */
 /* -------------------------------------------------------------------------- */
 
-export function scoreProject(viewer: PersonView, project: Project): MatchResult {
+export function scoreProject(viewer: PersonView, project: Project, i18n: I18n): MatchResult {
   const v = viewer.profile;
   const roles = [v.role, ...v.secondaryRoles];
   const openSlots = project.roleSlots.filter((s) => s.filled < s.count);
@@ -342,10 +386,10 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
   const skillHit = slotSkills.filter((s) => v.skillIds.includes(s));
 
   const rules: Rule[] = [
-    categoryRule(v, project.categories, 24),
-    skillRule(v, project.requiredSkillIds, 20, "Required skills you have"),
-    locationRule(v, project.cityIds, 22, "project"),
-    languageRule(v, project.languages, 10),
+    categoryRule(v, project.categories, 24, i18n),
+    skillRule(v, project.requiredSkillIds, 20, i18n, "reason.skill.required"),
+    locationRule(v, project.cityIds, 22, "project", i18n),
+    languageRule(v, project.languages, 10, i18n),
     {
       points: openSlots.length > 0 ? (matchingSlots.length / openSlots.length) * 20 : 0,
       max: 20,
@@ -353,7 +397,9 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
         matchingSlots.length > 0
           ? reason(
               "opportunity",
-              `Open place for ${matchingSlots.map((s) => ROLE_LABELS[s.role]).slice(0, 2).join(" / ")}`,
+              i18n.t("reason.opportunity.openSlot", {
+                roles: i18n.list(matchingSlots.slice(0, 2).map((s) => i18n.L.role[s.role])),
+              }),
               98,
             )
           : undefined,
@@ -363,18 +409,29 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
       max: 14,
       reason:
         skillHit.length > 0
-          ? reason("skill", `Role needs ${skillHit.map((s) => SKILL_BY_ID.get(s)?.label).slice(0, 2).join(", ")}`, 94)
+          ? reason(
+              "skill",
+              i18n.t("reason.skill.roleNeeds", {
+                skills: i18n.list(skillHit.slice(0, 2).map((s) => i18n.skill(s))),
+              }),
+              94,
+            )
           : undefined,
     },
     {
       points: project.status === "recruiting" ? 12 : project.status === "in-progress" ? 5 : 0,
       max: 12,
-      reason: project.status === "recruiting" ? reason("availability", "Recruiting now", 72) : undefined,
+      reason:
+        project.status === "recruiting"
+          ? reason("availability", i18n.t("reason.availability.recruiting"), 72)
+          : undefined,
     },
     {
       points: project.remoteFriendly && v.availability !== "busy" ? 8 : 0,
       max: 8,
-      reason: project.remoteFriendly ? reason("availability", "Remote friendly", 46) : undefined,
+      reason: project.remoteFriendly
+        ? reason("availability", i18n.t("reason.availability.remote"), 46)
+        : undefined,
     },
     {
       points: v.openTo.includes("projects") ? 6 : 0,
@@ -383,7 +440,10 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
   ];
 
   const { score, reasons } = accumulate(rules);
-  const sharedCats = project.categories.filter((c) => v.categories.includes(c)).map((c) => CATEGORY_LABELS[c]);
+  const sharedCats = project.categories
+    .filter((c) => v.categories.includes(c))
+    .map((c) => i18n.L.category[c]);
+
   return {
     id: `m-project-${project.id}`,
     targetKind: "project",
@@ -392,10 +452,15 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
     reasons,
     narrative:
       sharedCats.length > 0
-        ? `Your skills in ${sharedCats.slice(0, 2).join(" and ")} strongly match this project${
-            matchingSlots.length > 0 ? `, and there is an open ${ROLE_LABELS[matchingSlots[0].role]} place.` : "."
-          }`
-        : `This project works across ${project.cityIds.map((c) => CITY_BY_ID.get(c)?.name).slice(0, 2).join(" and ")} — cities on your list.`,
+        ? matchingSlots.length > 0
+          ? i18n.t("narrative.project.skillsWithSlot", {
+              categories: i18n.list(sharedCats.slice(0, 2)),
+              role: i18n.L.role[matchingSlots[0].role],
+            })
+          : i18n.t("narrative.project.skills", { categories: i18n.list(sharedCats.slice(0, 2)) })
+        : i18n.t("narrative.project.cities", {
+            cities: i18n.list(project.cityIds.slice(0, 2).map((c) => i18n.city(c))),
+          }),
   };
 }
 
@@ -403,23 +468,25 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
 /* Person → Event                                                             */
 /* -------------------------------------------------------------------------- */
 
-export function scoreEvent(viewer: PersonView, event: BeautyEvent): MatchResult {
+export function scoreEvent(viewer: PersonView, event: BeautyEvent, i18n: I18n): MatchResult {
   const v = viewer.profile;
   const rules: Rule[] = [
-    categoryRule(v, event.categories, 26),
-    locationRule(v, [event.cityId], 24, "event"),
-    languageRule(v, event.languages, 12),
+    categoryRule(v, event.categories, 26, i18n),
+    locationRule(v, [event.cityId], 24, "event", i18n),
+    languageRule(v, event.languages, 12, i18n),
     {
       points: event.online ? 12 : 0,
       max: 12,
-      reason: event.online ? reason("availability", "Join online from anywhere", 55) : undefined,
+      reason: event.online
+        ? reason("availability", i18n.t("reason.availability.online"), 55)
+        : undefined,
     },
     {
       points: event.type === "meetup" || event.type === "networking" ? 12 : 6,
       max: 12,
       reason:
         event.type === "meetup" || event.type === "networking"
-          ? reason("opportunity", "Built for meeting people", 68)
+          ? reason("opportunity", i18n.t("reason.opportunity.meetPeople"), 68)
           : undefined,
     },
     {
@@ -427,7 +494,7 @@ export function scoreEvent(viewer: PersonView, event: BeautyEvent): MatchResult 
       max: 12,
       reason:
         event.type === "workshop" && v.experience === "student"
-          ? reason("experience", "Hands-on, good for students", 64)
+          ? reason("experience", i18n.t("reason.experience.handsOn"), 64)
           : undefined,
     },
   ];
@@ -439,10 +506,11 @@ export function scoreEvent(viewer: PersonView, event: BeautyEvent): MatchResult 
     targetId: event.id,
     score,
     reasons,
-    narrative: `${event.title} in ${CITY_BY_ID.get(event.cityId)?.name} covers ${event.categories
-      .map((c) => CATEGORY_LABELS[c])
-      .slice(0, 2)
-      .join(" and ")}.`,
+    narrative: i18n.t("narrative.event", {
+      title: event.title,
+      city: i18n.city(event.cityId),
+      categories: i18n.list(event.categories.slice(0, 2).map((c) => i18n.L.category[c])),
+    }),
   };
 }
 
@@ -457,7 +525,12 @@ export interface CityOpportunityCounts {
   people: number;
 }
 
-export function scoreCity(viewer: PersonView, city: City, counts: CityOpportunityCounts): MatchResult {
+export function scoreCity(
+  viewer: PersonView,
+  city: City,
+  counts: CityOpportunityCounts,
+  i18n: I18n,
+): MatchResult {
   const v = viewer.profile;
   const sceneOverlap = city.scenes.filter((s) => v.categories.includes(s));
   const isTarget = v.targetCityIds.includes(city.id);
@@ -468,9 +541,9 @@ export function scoreCity(viewer: PersonView, city: City, counts: CityOpportunit
       points: isHome ? 22 : isTarget ? 20 : 4,
       max: 22,
       reason: isHome
-        ? reason("location", "Your home city", 90)
+        ? reason("location", i18n.t("reason.location.homeCity"), 90)
         : isTarget
-          ? reason("goal", "On your target list", 92)
+          ? reason("goal", i18n.t("reason.goal.onTargetList"), 92)
           : undefined,
     },
     {
@@ -478,28 +551,46 @@ export function scoreCity(viewer: PersonView, city: City, counts: CityOpportunit
       max: 24,
       reason:
         sceneOverlap.length > 0
-          ? reason("category", `Strong in ${sceneOverlap.map((s) => CATEGORY_LABELS[s]).slice(0, 2).join(" and ")}`, 86)
+          ? reason(
+              "category",
+              i18n.t("reason.category.strongIn", {
+                categories: i18n.list(sceneOverlap.slice(0, 2).map((s) => i18n.L.category[s])),
+              }),
+              86,
+            )
           : undefined,
     },
     {
       points: Math.min(20, counts.projects * 4),
       max: 20,
-      reason: counts.projects > 0 ? reason("opportunity", `${counts.projects} matching projects`, 96) : undefined,
+      reason:
+        counts.projects > 0
+          ? reason("opportunity", i18n.t("reason.opportunity.matchingProjects", { count: counts.projects }), 96)
+          : undefined,
     },
     {
       points: Math.min(14, counts.brands * 3),
       max: 14,
-      reason: counts.brands > 0 ? reason("opportunity", `${counts.brands} brands hiring or collaborating`, 82) : undefined,
+      reason:
+        counts.brands > 0
+          ? reason("opportunity", i18n.t("reason.opportunity.brandsHiring", { count: counts.brands }), 82)
+          : undefined,
     },
     {
       points: Math.min(10, counts.events * 3),
       max: 10,
-      reason: counts.events > 0 ? reason("opportunity", `${counts.events} upcoming events`, 62) : undefined,
+      reason:
+        counts.events > 0
+          ? reason("opportunity", i18n.t("reason.opportunity.upcomingEvents", { count: counts.events }), 62)
+          : undefined,
     },
     {
       points: Math.min(10, counts.people * 1.5),
       max: 10,
-      reason: counts.people > 0 ? reason("interest", `${counts.people} people in your field`, 58) : undefined,
+      reason:
+        counts.people > 0
+          ? reason("interest", i18n.t("reason.interest.peopleInField", { count: counts.people }), 58)
+          : undefined,
     },
   ];
 
@@ -510,7 +601,7 @@ export function scoreCity(viewer: PersonView, city: City, counts: CityOpportunit
     targetId: city.id,
     score,
     reasons,
-    narrative: `${city.name}: ${city.tagline}`,
+    narrative: i18n.t("narrative.city", { city: i18n.city(city.id), tagline: city.tagline }),
   };
 }
 

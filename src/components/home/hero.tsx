@@ -30,7 +30,7 @@ export function HomeHero({
         <div className="min-w-0">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-50 backdrop-blur">
             <span className="size-1.5 rounded-full gradient-accent" />
-            Global Beauty Ecosystem
+            {t("home.hero.badge")}
           </span>
 
           <h1 className="mt-5 font-display text-[34px] font-semibold uppercase leading-[1.05] tracking-[-0.035em] sm:text-[46px] lg:text-[54px] xl:text-[60px]">
@@ -45,23 +45,23 @@ export function HomeHero({
             <Button asChild variant="accent" size="lg">
               <Link href="/match?ai=1">
                 <Sparkles />
-                Start AI Match
+                {t("home.hero.startAi")}
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/map">
                 <Globe />
-                Open Global Map
+                {t("home.hero.openMap")}
               </Link>
             </Button>
           </div>
 
           <dl className="mt-8 grid max-w-lg grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
             {[
-              ["People", stats.people],
-              ["Brands", stats.brands],
-              ["Projects", stats.projects],
-              ["Cities", stats.cities],
+              [t("home.stats.people"), stats.people],
+              [t("home.stats.brands"), stats.brands],
+              [t("home.stats.projects"), stats.projects],
+              [t("home.stats.cities"), stats.cities],
             ].map(([label, value]) => (
               <div key={label as string}>
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-30">{label}</dt>
@@ -79,7 +79,7 @@ export function HomeHero({
             href="/map"
             className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink-70 transition-colors hover:text-lavender"
           >
-            Explore every city
+            {t("home.hero.exploreCities")}
             <ArrowRight className="size-4" />
           </Link>
         </div>

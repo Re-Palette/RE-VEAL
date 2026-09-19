@@ -3,12 +3,12 @@
 import { Check, Languages } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useI18n } from "@/lib/i18n/context";
-import { LANGUAGE_LABELS, LANGUAGE_SHORT } from "@/lib/labels";
+import { LANGUAGE_LABELS, LANGUAGE_SHORT } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function LanguageSelector({ compact = false }: { compact?: boolean }) {
-  const { language, setLanguage } = useI18n();
+  const { language, setLanguage, t, switching } = useI18n();
 
   return (
     <DropdownMenu.Root>
@@ -17,9 +17,9 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
           "inline-flex items-center gap-1.5 rounded-full border border-ink-15 bg-white/70 px-3 text-xs font-medium text-ink-70 transition-colors hover:border-lavender/40 hover:text-ink",
           compact ? "h-9" : "h-10",
         )}
-        aria-label="Change language"
+        aria-label={t("language.change")}
       >
-        <Languages className="size-4 text-ink-30" />
+        <Languages className={cn("size-4 text-ink-30", switching && "animate-pulse text-lavender")} />
         {LANGUAGE_SHORT[language]}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -28,7 +28,7 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
           sideOffset={8}
           className="z-50 min-w-44 rounded-2xl border border-ink-08 bg-white p-1.5 shadow-float animate-rise"
         >
-          <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-30">Language</p>
+          <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-30">{t("language.title")}</p>
           {LANGUAGES.map((code) => (
             <DropdownMenu.Item
               key={code}
@@ -40,7 +40,7 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
             </DropdownMenu.Item>
           ))}
           <p className="border-t border-ink-08 px-3 pb-1 pt-2.5 text-[11px] leading-relaxed text-ink-30">
-            Posts written in other languages are shown translated.
+            {t("language.note")}
           </p>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

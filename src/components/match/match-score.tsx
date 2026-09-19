@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { MATCH_REASON_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
 import type { MatchReason } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { scoreTone } from "@/lib/visual";
@@ -89,6 +89,7 @@ export function MatchReasons({
   className?: string;
   variant?: "chips" | "list";
 }) {
+  const { L } = useI18n();
   const shown = reasons.slice(0, limit);
   if (shown.length === 0) return null;
 
@@ -100,7 +101,7 @@ export function MatchReasons({
             <span className="mt-1.5 size-1.5 shrink-0 rounded-full gradient-accent" />
             <span className="leading-relaxed text-ink-70">
               <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-30">
-                {MATCH_REASON_LABELS[reason.kind]}
+                {L.reasonKind[reason.kind]}
               </span>
               <br />
               {reason.label}

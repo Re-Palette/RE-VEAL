@@ -14,8 +14,9 @@ import { PersonRow } from "@/components/cards/person-card";
 import { EventCard } from "@/components/cards/event-card";
 import { CityMap } from "@/components/map/city-map";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { CITY_BY_ID, COUNTRY_BY_ID } from "@/lib/data/geo";
-import { CATEGORY_LABELS, EVENT_TYPE_LABELS, LANGUAGE_LABELS } from "@/lib/labels";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { daysUntil, formatDateRange } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 
@@ -32,12 +33,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
+  const i18n = await getI18n();
   const { id } = await params;
   const event = await db.getEvent(id);
   if (!event) notFound();
 
   const [matches, allPeople, allEvents, allBrands] = await Promise.all([
-    db.matchesFor("event", 200),
+    db.matchesFor("event", 200, i18n.language),
     db.listPeople(),
     db.listEvents(),
     db.listBrands(),
@@ -58,17 +60,17 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
           <div className="absolute inset-x-5 top-5 flex flex-wrap gap-2 sm:inset-x-8">
             <Badge variant="ink" size="md">
-              {EVENT_TYPE_LABELS[event.type]}
+              {i18n.L.eventType[event.type]}
             </Badge>
             {event.online && (
               <Badge variant="sky" size="md" className="bg-white/85 backdrop-blur">
                 <Wifi className="size-3.5" />
-                Online available
+                {i18n.t("eventDetail.onlineAvailable")}
               </Badge>
             )}
             {until > 0 && (
               <Badge variant="blush" size="md" className="bg-white/85 backdrop-blur">
-                In {until} days
+                {i18n.t("events.inDays", { count: until })}
               </Badge>
             )}
           </div>
@@ -89,7 +91,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="size-4 text-ink-30" />
-                  {event.venue}, {city?.name} {country?.flag}
+                  {event.venue}, {i18n.city(event.cityId)} {country?.flag}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Ticket className="size-4 text-ink-30" />
@@ -107,7 +109,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               <div className="flex flex-col gap-2">
                 <Button size="lg" variant="accent">
                   <Ticket />
-                  Register
+                  {i18n.t("eventDetail.register")}
                 </Button>
                 <SaveButton size="sm" />
               </div>
@@ -121,7 +123,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           {match && (
             <Card sheen className="p-6">
               <h2 className="mb-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                Why this matches you
+                {i18n.t("common.whyMatch")}
               </h2>
               <p className="text-[15px] leading-relaxed text-ink-70">{match.narrative}</p>
               <MatchReasons reasons={match.reasons} limit={5} className="mt-4" />
@@ -129,12 +131,14 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           )}
 
           <Card className="p-6 sm:p-8">
-            <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">About this event</h2>
+            <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">
+              {i18n.t("eventDetail.about")}
+            </h2>
             <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink-70">{event.description}</p>
             <div className="mt-6 flex flex-wrap gap-1.5">
               {event.categories.map((c) => (
                 <Badge key={c} variant="blush" size="md">
-                  {CATEGORY_LABELS[c]}
+                  {i18n.L.category[c]}
                 </Badge>
               ))}
             </div>
@@ -143,12 +147,12 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           {city && (
             <Card className="overflow-hidden">
               <div className="flex items-center justify-between p-5">
-                <h2 className="font-display text-lg font-semibold tracking-[-0.02em]">Where</h2>
+                <h2 className="font-display text-lg font-semibold tracking-[-0.02em]">{i18n.t("eventDetail.where")}</h2>
                 <Link
                   href={`/map?city=${city.id}`}
                   className="text-sm font-medium text-ink-50 transition-colors hover:text-lavender"
                 >
-                  Open in map
+                  {i18n.t("eventDetail.openInMap")}
                 </Link>
               </div>
               <CityMap city={city} className="aspect-[2/1] w-full rounded-none border-0 border-t" />
@@ -158,7 +162,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           {nearby.length > 0 && (
             <div>
               <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">
-                Also in {city?.name}
+                {i18n.t("eventDetail.alsoIn", { city: i18n.city(event.cityId) })}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 {nearby.map((other) => (
@@ -173,20 +177,22 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           <Card className="p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
               <Users className="size-4 text-lavender" />
-              Attending
+              {i18n.t("eventDetail.attending")}
             </h2>
             <p className="font-display text-2xl font-semibold tracking-[-0.03em]">
               {event.attending}
-              <span className="ml-1.5 text-sm font-medium text-ink-30">of {event.capacity}</span>
+              <span className="ml-1.5 text-sm font-medium text-ink-30">
+                {i18n.t("eventDetail.ofCapacity", { count: event.capacity })}
+              </span>
             </p>
             <Progress value={(event.attending / event.capacity) * 100} className="mt-3" />
             <p className="mt-3 text-xs text-ink-50">
-              Hosted by {event.hostName}
+              {i18n.t("eventDetail.hostedBy", { host: event.hostName })}
               {host && (
                 <>
                   {" · "}
                   <Link href={`/brands/${host.id}`} className="font-medium text-ink-70 hover:text-lavender">
-                    View brand
+                    {i18n.t("eventDetail.viewBrand")}
                   </Link>
                 </>
               )}
@@ -195,7 +201,9 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
 
           {host && (
             <Card className="p-5">
-              <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Host</h2>
+              <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+                {i18n.t("eventDetail.host")}
+              </h2>
               <Link href={`/brands/${host.id}`} className="flex items-center gap-3">
                 <Avatar seed={host.avatarSeed} name={host.name} size="lg" square />
                 <span className="min-w-0">
@@ -209,7 +217,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           {speakers.length > 0 && (
             <Card className="p-5">
               <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                Speakers &amp; hosts
+                {i18n.t("eventDetail.speakers")}
               </h2>
               <div className="divide-y divide-ink-08">
                 {speakers.map((speaker) => (

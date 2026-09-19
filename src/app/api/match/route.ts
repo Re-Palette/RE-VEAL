@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/data-source";
+import { CITIES } from "@/lib/data/geo";
 import { interpretSync } from "@/lib/match/interpret";
-import { CITY_BY_ID } from "@/lib/data/geo";
+import { createI18n } from "@/lib/i18n";
+import { getLanguage } from "@/lib/i18n/server";
 import type { MatchResult, MatchTargetKind } from "@/lib/types";
 
 const ALL_KINDS: MatchTargetKind[] = ["person", "brand", "project", "event"];
@@ -14,6 +16,8 @@ const ALL_KINDS: MatchTargetKind[] = ["person", "brand", "project", "event"];
  * swapping the interpreter for a model call is a change inside this file.
  */
 export async function POST(request: Request) {
+  const language = await getLanguage();
+  const i18n = createI18n(language);
   const body = (await request.json().catch(() => ({}))) as { prompt?: string };
   const prompt = (body.prompt ?? "").trim();
   const intent = interpretSync(prompt);
@@ -51,12 +55,12 @@ export async function POST(request: Request) {
 
   const wantedCities = new Set(intent.cityIds);
   intent.countryIds.forEach((countryId) => {
-    CITY_BY_ID.forEach((city) => {
+    CITIES.forEach((city) => {
       if (city.countryId === countryId) wantedCities.add(city.id);
     });
   });
 
-  const batches = await Promise.all(targetKinds.map((kind) => db.matchesFor(kind, 40)));
+  const batches = await Promise.all(targetKinds.map((kind) => db.matchesFor(kind, 40, language)));
 
   const hasIntent = wantedCities.size > 0 || intent.categories.length > 0 || intent.roles.length > 0;
 
@@ -74,7 +78,7 @@ export async function POST(request: Request) {
         hits += 1;
         extra.push({
           kind: "location",
-          label: `Matches "${CITY_BY_ID.get(named)?.name ?? "your location"}"`,
+          label: i18n.t("reason.ai.matchesLocation", { city: i18n.city(named) }),
           weight: 99,
         });
       }
@@ -86,7 +90,13 @@ export async function POST(request: Request) {
       if (matched.length > 0) {
         bonus += 6 * matched.length;
         hits += 1;
-        extra.push({ kind: "category", label: `You asked for ${matched.join(", ")}`, weight: 98 });
+        extra.push({
+          kind: "category",
+          label: i18n.t("reason.ai.youAskedFor", {
+            things: i18n.list(matched.map((c) => i18n.L.category[c])),
+          }),
+          weight: 98,
+        });
       }
     }
 
@@ -96,7 +106,11 @@ export async function POST(request: Request) {
       if (matched.length > 0) {
         bonus += 7;
         hits += 1;
-        extra.push({ kind: "opportunity", label: `Role you asked for: ${matched[0]}`, weight: 97 });
+        extra.push({
+          kind: "opportunity",
+          label: i18n.t("reason.ai.roleAsked", { role: i18n.L.role[matched[0]] }),
+          weight: 97,
+        });
       }
     }
 

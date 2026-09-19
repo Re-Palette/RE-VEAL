@@ -7,7 +7,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Logo } from "@/components/layout/logo";
 import { NAV_GROUPS } from "@/components/layout/nav-config";
 import { useI18n } from "@/lib/i18n/context";
-import { ROLE_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import type { PersonView } from "@/lib/types";
 
@@ -24,14 +23,14 @@ function isActive(pathname: string, href: string) {
 export function Sidebar({
   viewer,
   counts,
-  cityName,
+  cityId,
 }: {
   viewer: PersonView;
   counts: SidebarCounts;
-  cityName: string;
+  cityId: string;
 }) {
   const pathname = usePathname();
-  const { t } = useI18n();
+  const { t, L, city } = useI18n();
 
   return (
     <aside className="hidden h-dvh w-[264px] shrink-0 flex-col border-r border-ink-08 bg-white/70 backdrop-blur-xl lg:flex xl:w-[276px]">
@@ -95,7 +94,7 @@ export function Sidebar({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">{viewer.name}</span>
             <span className="block truncate text-xs text-ink-50">
-              {ROLE_LABELS[viewer.profile.role]} · {cityName}
+              {L.role[viewer.profile.role]} · {city(cityId)}
             </span>
           </span>
           <ArrowUpRight className="size-4 shrink-0 text-ink-30" />

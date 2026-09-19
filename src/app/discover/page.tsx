@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { DiscoverFeed } from "@/app/discover/discover-feed";
 
 export const metadata: Metadata = {
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
+  const i18n = await getI18n();
   const [viewer, posts, people, brands, projects, events] = await Promise.all([
     db.getCurrentUser(),
     db.listPosts(),
@@ -18,10 +20,10 @@ export default async function DiscoverPage() {
   ]);
 
   const [person, brand, project, event] = await Promise.all([
-    db.matchesFor("person", 200),
-    db.matchesFor("brand", 200),
-    db.matchesFor("project", 200),
-    db.matchesFor("event", 200),
+    db.matchesFor("person", 200, i18n.language),
+    db.matchesFor("brand", 200, i18n.language),
+    db.matchesFor("project", 200, i18n.language),
+    db.matchesFor("event", 200, i18n.language),
   ]);
 
   const newCreators = people

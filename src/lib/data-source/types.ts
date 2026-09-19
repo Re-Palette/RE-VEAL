@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@/lib/types";
 import type {
   BeautyEvent,
   Brand,
@@ -55,7 +56,14 @@ export interface DataSource {
   listNotifications(): Promise<Notification[]>;
   listConnections(): Promise<Connection[]>;
 
-  /** Ranked matches for the signed-in viewer, optionally narrowed by kind. */
-  matchesFor(kind: MatchResult["targetKind"], limit?: number): Promise<MatchResult[]>;
-  search(query: string, limit?: number): Promise<SearchResult[]>;
+  /**
+   * Ranked matches for the signed-in viewer, optionally narrowed by kind.
+   * `language` is required because every reason and narrative is prose.
+   */
+  matchesFor(
+    kind: MatchResult["targetKind"],
+    limit: number | undefined,
+    language: LanguageCode,
+  ): Promise<MatchResult[]>;
+  search(query: string, limit: number | undefined, language: LanguageCode): Promise<SearchResult[]>;
 }

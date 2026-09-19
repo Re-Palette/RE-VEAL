@@ -12,6 +12,7 @@ import { EventCard } from "@/components/cards/event-card";
 import { ChipGroup } from "@/components/filters/chip-group";
 import { Card } from "@/components/ui/card";
 import { EmptyState, SectionHeader } from "@/components/ui/misc";
+import { useI18n } from "@/lib/i18n/context";
 import type {
   BeautyEvent,
   Brand,
@@ -23,14 +24,6 @@ import type {
 } from "@/lib/types";
 
 type Scope = "all" | MatchTargetKind;
-
-const SCOPES: { value: Scope; label: string }[] = [
-  { value: "all", label: "Everything" },
-  { value: "person", label: "People" },
-  { value: "brand", label: "Brands" },
-  { value: "project", label: "Projects" },
-  { value: "event", label: "Events" },
-];
 
 export function MatchBoard({
   people,
@@ -48,8 +41,17 @@ export function MatchBoard({
   connections: Record<string, ConnectionStatus>;
 }) {
   const params = useSearchParams();
+  const { t } = useI18n();
   const [scope, setScope] = useState<Scope>("all");
   const [ai, setAi] = useState<AiMatchResponse | undefined>();
+
+  const SCOPES: { value: Scope; label: string }[] = [
+    { value: "all", label: t("match.scope.all") },
+    { value: "person", label: t("common.people") },
+    { value: "brand", label: t("common.brands") },
+    { value: "project", label: t("common.projects") },
+    { value: "event", label: t("common.events") },
+  ];
 
   const personById = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const brandById = useMemo(() => new Map(brands.map((b) => [b.id, b])), [brands]);
@@ -97,30 +99,28 @@ export function MatchBoard({
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Match"
-        title="Beauty Collaboration Matching"
-        description="Not a follower feed and not a dating app. RE:VEAL scores people, brands, projects and events against your skills, goals, languages and where you want to work — and always shows the reasoning."
+        eyebrow={t("nav.match")}
+        title={t("match.title")}
+        description={t("match.description")}
       />
 
       <AiMatch onResults={setAi} autoOpen={params.get("ai") === "1"} />
 
       <section className="mt-10">
         <SectionHeader
-          eyebrow={ai ? "AI Match results" : "Your strongest matches"}
-          title={ai ? `${active.length} results for what you described` : "Ranked for you right now"}
-          description={
-            ai
-              ? "Ordered by how much of your request each result satisfies, not by score alone — so a result matching two things you asked for sits above a higher-scoring one that matches one. The first chip on each card says which."
-              : "Scored on skills, beauty category, location, language, goals, availability and open opportunities."
+          eyebrow={ai ? t("match.results.eyebrowAi") : t("match.results.eyebrowBase")}
+          title={
+            ai ? t("match.results.titleAi", { count: active.length }) : t("match.results.titleBase")
           }
+          description={ai ? t("match.results.descriptionAi") : t("match.results.descriptionBase")}
           action={<ChipGroup value={scope} onChange={setScope} options={SCOPES} />}
         />
 
         {visible.length === 0 ? (
           <EmptyState
             icon={Sparkles}
-            title="No matches in that scope"
-            description="Switch to Everything, or describe what you are looking for in your own words above."
+            title={t("match.empty.title")}
+            description={t("match.empty.description")}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -131,18 +131,9 @@ export function MatchBoard({
 
       <section className="mt-12 grid gap-5 lg:grid-cols-3">
         {[
-          {
-            title: "What goes into a score",
-            body: "Skills, interests, beauty category, city and target cities, shared languages, experience level, availability, stated goals, and whether either side is open to the kind of collaboration the other wants.",
-          },
-          {
-            title: "Why the reasons matter",
-            body: "A number on its own is not actionable. Every match on RE:VEAL carries the specific overlaps behind it, so you can judge whether the reasoning holds before you reach out.",
-          },
-          {
-            title: "Complementary, not identical",
-            body: "The strongest collaborations are rarely between two people who do the same thing. Scoring rewards skills that fill a gap in your own set as much as skills you share.",
-          },
+          { title: t("match.explain.1.title"), body: t("match.explain.1.body") },
+          { title: t("match.explain.2.title"), body: t("match.explain.2.body") },
+          { title: t("match.explain.3.title"), body: t("match.explain.3.body") },
         ].map((item) => (
           <Card key={item.title} className="p-6">
             <h3 className="font-display text-base font-semibold tracking-[-0.015em]">{item.title}</h3>

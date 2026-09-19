@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/misc";
 import { MatchBadge, MatchReasons } from "@/components/match/match-score";
+import { useI18n } from "@/lib/i18n/context";
+import type { UIKey } from "@/lib/i18n";
 import { COUNTRY_BY_ID } from "@/lib/data/geo";
-import { CATEGORY_LABELS, REGION_LABELS } from "@/lib/labels";
 import { BEAUTY_CATEGORIES, REGIONS, type BeautyCategory, type City, type MatchResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -26,11 +27,11 @@ interface CityInfo {
   totals: { projects: number; brands: number; events: number; people: number };
 }
 
-const KIND_LABEL: Record<MapEntity["kind"], string> = {
-  person: "People",
-  brand: "Brands",
-  project: "Projects",
-  event: "Events",
+const KIND_KEY: Record<MapEntity["kind"], UIKey> = {
+  person: "common.people",
+  brand: "common.brands",
+  project: "common.projects",
+  event: "common.events",
 };
 
 const KIND_ORDER: MapEntity["kind"][] = ["project", "brand", "person", "event"];
@@ -49,6 +50,7 @@ export function MapExplorer({
   viewerCategories: BeautyCategory[];
 }) {
   const params = useSearchParams();
+  const { t, L, city: cityName } = useI18n();
   const [selectedCityId, setSelectedCityId] = useState<string | undefined>(params.get("city") ?? undefined);
   const [audience, setAudience] = useState<AudienceFilter>("all");
   const [categories, setCategories] = useState<BeautyCategory[]>([]);
@@ -123,14 +125,18 @@ export function MapExplorer({
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Global Map"
-        title="Find your place in the beauty world"
-        description="Every person, brand, project and event on RE:VEAL, plotted where the work actually happens. Filter it down, then open a city to see what you could join."
+        eyebrow={t("map.eyebrow")}
+        title={t("map.title")}
+        description={t("map.description")}
         action={
           <label className="flex cursor-pointer items-center gap-2.5 rounded-full border border-ink-15 bg-white/70 px-4 py-2 text-sm">
             <Sparkles className={cn("size-4", personalised ? "text-lavender" : "text-ink-30")} />
-            <span className="font-medium">Recommended for you</span>
-            <Switch checked={personalised} onCheckedChange={setPersonalised} aria-label="Personalise the map" />
+            <span className="font-medium">{t("map.personalise")}</span>
+            <Switch
+              checked={personalised}
+              onCheckedChange={setPersonalised}
+              aria-label={t("map.personaliseAria")}
+            />
           </label>
         }
       />
@@ -149,7 +155,7 @@ export function MapExplorer({
                   : "border border-ink-08 bg-white text-ink-50 hover:border-lavender/40 hover:text-ink",
               )}
             >
-              {filter.label}
+              {t(filter.labelKey)}
             </button>
           ))}
         </div>
@@ -166,7 +172,7 @@ export function MapExplorer({
                   : "border-ink-08 bg-white text-ink-50 hover:border-ink-30 hover:text-ink",
               )}
             >
-              {CATEGORY_LABELS[category]}
+              {L.category[category]}
             </button>
           ))}
         </div>
@@ -183,16 +189,15 @@ export function MapExplorer({
                   : "border-ink-08 bg-white text-ink-50 hover:border-ink-30 hover:text-ink",
               )}
             >
-              {key === "worldwide" ? "Worldwide" : REGION_LABELS[key as keyof typeof REGION_LABELS]}
+              {key === "worldwide" ? t("common.worldwide") : L.region[key as keyof typeof L.region]}
             </button>
           ))}
         </div>
 
         <div className="flex items-center justify-end">
           <span className="flex items-center gap-3 text-xs text-ink-50">
-            <span>
-              <span className="font-semibold text-ink">{filtered.length}</span> results across{" "}
-              <span className="font-semibold text-ink">{markers.length}</span> cities
+            <span className="font-semibold text-ink">
+              {t("map.resultsAcross", { count: filtered.length, cities: markers.length })}
             </span>
             {activeFilters > 0 && (
               <button
@@ -204,7 +209,7 @@ export function MapExplorer({
                 className="inline-flex items-center gap-1 font-medium text-ink-30 transition-colors hover:text-lavender"
               >
                 <X className="size-3.5" />
-                Clear
+                {t("common.clear")}
               </button>
             )}
           </span>
@@ -260,17 +265,20 @@ function RecommendedPanel({
   viewerRole: string;
   personalised: boolean;
 }) {
+  const { t, city: cityName } = useI18n();
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <div className="border-b border-ink-08 p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-30">
-          {personalised ? "Recommended for you" : "Most active"}
+          {personalised ? t("map.panel.recommendedEyebrow") : t("map.panel.activeEyebrow")}
         </p>
         <h2 className="mt-2 font-display text-lg font-semibold tracking-[-0.02em]">
-          {personalised ? `Best cities for a ${viewerRole.toLowerCase()} in ${viewerCityName}` : "Where the work is"}
+          {personalised
+            ? t("map.panel.bestCities", { role: viewerRole, city: viewerCityName })
+            : t("map.panel.whereWork")}
         </h2>
         <p className="mt-1.5 text-[13px] leading-relaxed text-ink-50">
-          Select a city on the map, or start with one of these.
+          {t("map.panel.selectHint")}
         </p>
       </div>
 
@@ -285,7 +293,7 @@ function RecommendedPanel({
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   <span className="truncate font-display text-[15px] font-semibold">
-                    {info.city.name} {COUNTRY_BY_ID.get(info.city.countryId)?.flag}
+                    {cityName(info.city.id)} {COUNTRY_BY_ID.get(info.city.countryId)?.flag}
                   </span>
                   {info.match && <MatchBadge score={info.match.score} className="ml-auto" />}
                 </span>
@@ -302,7 +310,7 @@ function RecommendedPanel({
       <div className="border-t border-ink-08 p-4">
         <p className="flex items-start gap-2 text-[12px] leading-relaxed text-ink-50">
           <Globe className="mt-0.5 size-4 shrink-0 text-ink-30" />
-          Marker size follows your filters. Turn off “Recommended for you” to see raw activity instead of match score.
+          {t("map.panel.note")}
         </p>
       </div>
     </Card>
@@ -322,6 +330,7 @@ function CityPanel({
   personalised: boolean;
   onClose: () => void;
 }) {
+  const { t, L, city: cityName } = useI18n();
   const counts = personalised ? info.personalCounts : info.totals;
   const country = COUNTRY_BY_ID.get(info.city.countryId);
   const grouped = KIND_ORDER.map((kind) => ({
@@ -335,17 +344,17 @@ function CityPanel({
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1.5 text-ink-30 transition-colors hover:bg-ink-08 hover:text-ink"
-          aria-label="Close city panel"
+          aria-label={t("map.city.close")}
         >
           <X className="size-4" />
         </button>
 
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-30">
-          {country?.name} · {info.city.region.replace(/-/g, " ")}
+          {country?.name} · {L.region[info.city.region]}
         </p>
         <div className="mt-2 flex items-center gap-3">
           <h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">
-            {info.city.name} {country?.flag}
+            {cityName(info.city.id)} {country?.flag}
           </h2>
           {info.match && <MatchBadge score={info.match.score} showLabel />}
         </div>
@@ -353,10 +362,10 @@ function CityPanel({
 
         <dl className="mt-4 grid grid-cols-4 gap-2">
           {[
-            ["Projects", counts.projects],
-            ["Brands", counts.brands],
-            ["Events", counts.events],
-            ["People", counts.people],
+            [t("common.projects"), counts.projects],
+            [t("common.brands"), counts.brands],
+            [t("common.events"), counts.events],
+            [t("common.people"), counts.people],
           ].map(([label, value]) => (
             <div key={label as string} className="rounded-xl bg-canvas px-2 py-2.5 text-center">
               <dd className="font-display text-lg font-semibold leading-none">{value as number}</dd>
@@ -368,7 +377,7 @@ function CityPanel({
         {info.match && info.match.reasons.length > 0 && (
           <div className="mt-4 rounded-2xl bg-lavender-soft/50 p-3.5">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4B3BA0]">
-              Why this city matches you
+              {t("map.city.why")}
             </p>
             <MatchReasons reasons={info.match.reasons} limit={3} />
           </div>
@@ -378,13 +387,13 @@ function CityPanel({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {grouped.length === 0 ? (
           <p className="p-6 text-center text-sm text-ink-50">
-            Nothing here with the current filters. Try widening them.
+            {t("map.city.nothing")}
           </p>
         ) : (
           grouped.map((group) => (
             <section key={group.kind} className="border-b border-ink-08 last:border-0">
               <h3 className="sticky top-0 z-10 bg-white/90 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-30 backdrop-blur">
-                {KIND_LABEL[group.kind]} · {group.items.length}
+                {t(KIND_KEY[group.kind])} · {group.items.length}
               </h3>
               <ul className="px-2 pb-2">
                 {group.items.slice(0, 8).map((entity) => (
@@ -406,7 +415,7 @@ function CityPanel({
                           </span>
                           {entity.recruiting && (
                             <Badge variant="mint" size="sm" className="shrink-0">
-                              Open
+                              {t("common.open")}
                             </Badge>
                           )}
                         </span>
@@ -428,7 +437,7 @@ function CityPanel({
       <div className="shrink-0 border-t border-ink-08 p-4">
         <Button asChild variant="outline" size="sm" className="w-full">
           <Link href={`/projects?city=${info.city.id}`}>
-            See every project in {info.city.name}
+            {t("map.city.seeProjects", { city: cityName(info.city.id) })}
             <ArrowUpRight />
           </Link>
         </Button>

@@ -11,7 +11,7 @@ import { ProjectCard } from "@/components/cards/project-card";
 import { EventCard } from "@/components/cards/event-card";
 import { ChipGroup, MultiChipGroup } from "@/components/filters/chip-group";
 import { EmptyState, SectionHeader } from "@/components/ui/misc";
-import { CATEGORY_LABELS, POST_KIND_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
 import { BEAUTY_CATEGORIES, POST_KINDS, type BeautyCategory, type BeautyEvent, type Brand, type MatchResult, type PersonView, type Post, type PostKind, type Project } from "@/lib/types";
 
 type Kind = PostKind | "all";
@@ -36,6 +36,7 @@ export function DiscoverFeed({
   events: BeautyEvent[];
   matches: Record<string, MatchResult[]>;
 }) {
+  const { t, L } = useI18n();
   const [kind, setKind] = useState<Kind>("all");
   const [categories, setCategories] = useState<BeautyCategory[]>([]);
 
@@ -55,38 +56,38 @@ export function DiscoverFeed({
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Discover"
-        title="What is happening in beauty right now"
-        description="Categories, not an infinite feed. Read what is worth reading, then go and meet the people behind it."
+        eyebrow={t("nav.discover")}
+        title={t("discover.title")}
+        description={t("discover.description")}
       />
 
       <div className="mb-7 space-y-4 rounded-panel border border-ink-08 bg-white/70 p-4 backdrop-blur sm:p-5">
         <ChipGroup
-          label="Category"
+          label={t("discover.filter.category")}
           value={kind}
           onChange={setKind}
           options={[
-            { value: "all" as const, label: "Everything" },
-            ...POST_KINDS.map((k) => ({ value: k, label: POST_KIND_LABELS[k] })),
+            { value: "all" as const, label: t("discover.filter.everything") },
+            ...POST_KINDS.map((k) => ({ value: k, label: L.postKind[k] })),
           ]}
         />
         <MultiChipGroup
-          label="Beauty category"
+          label={t("common.beautyCategory")}
           values={categories}
           onToggle={(value) =>
             setCategories((current) =>
               current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
             )
           }
-          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: L.category[c] }))}
         />
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={Compass}
-          title="Nothing in that combination yet"
-          description="Clear the beauty category filter, or switch to Everything."
+          title={t("discover.empty.title")}
+          description={t("discover.empty.description")}
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-3 2xl:grid-cols-4">
@@ -104,9 +105,9 @@ export function DiscoverFeed({
       {/* Rails ------------------------------------------------------------ */}
       <section className="mt-14">
         <SectionHeader
-          eyebrow="New Creators"
-          title="People who joined recently"
-          action={<RailLink href="/people" label="All people" />}
+          eyebrow={L.postKind["new-creators"]}
+          title={t("discover.rail.creators.title")}
+          action={<RailLink href="/people" label={t("discover.rail.creators.link")} />}
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {newCreators.map((person) => (
@@ -117,9 +118,9 @@ export function DiscoverFeed({
 
       <section className="mt-14">
         <SectionHeader
-          eyebrow="New Brands"
-          title="Labels worth knowing about"
-          action={<RailLink href="/brands" label="All brands" />}
+          eyebrow={L.postKind["new-brands"]}
+          title={t("discover.rail.brands.title")}
+          action={<RailLink href="/brands" label={t("discover.rail.brands.link")} />}
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {newBrands.map((brand) => (
@@ -130,9 +131,9 @@ export function DiscoverFeed({
 
       <section className="mt-14">
         <SectionHeader
-          eyebrow="Projects"
-          title="Open calls closing soon"
-          action={<RailLink href="/projects?status=recruiting" label="All projects" />}
+          eyebrow={t("common.projects")}
+          title={t("discover.rail.projects.title")}
+          action={<RailLink href="/projects?status=recruiting" label={t("discover.rail.projects.link")} />}
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {projects.map((project) => (
@@ -143,9 +144,9 @@ export function DiscoverFeed({
 
       <section className="mt-14">
         <SectionHeader
-          eyebrow="Events"
-          title="Next up around the world"
-          action={<RailLink href="/events" label="All events" />}
+          eyebrow={t("common.events")}
+          title={t("discover.rail.events.title")}
+          action={<RailLink href="/events" label={t("discover.rail.events.link")} />}
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {events.map((event) => (

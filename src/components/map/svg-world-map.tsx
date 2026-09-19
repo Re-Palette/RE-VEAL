@@ -5,6 +5,7 @@ import { Minus, Plus, Maximize2 } from "lucide-react";
 import { WORLD_SHAPES } from "@/lib/geo/world-shapes";
 import { REGION_FOCUS, VIEWBOX, project } from "@/lib/geo/projection";
 import type { MapEngineProps } from "@/components/map/types";
+import { useI18n } from "@/lib/i18n/context";
 import { cn, clamp } from "@/lib/utils";
 
 interface Transform {
@@ -30,6 +31,7 @@ export function SvgWorldMap({
   personalised,
   className,
 }: MapEngineProps) {
+  const { t, city: cityName } = useI18n();
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<Transform>({ scale: 1, x: 0, y: 0 });
   const [hovered, setHovered] = useState<string | undefined>();
@@ -172,7 +174,7 @@ export function SvgWorldMap({
         onPointerCancel={endPointer}
         onPointerLeave={endPointer}
         role="img"
-        aria-label="World map of beauty people, brands, projects and events"
+        aria-label={t("map.aria")}
       >
         <defs>
           <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
@@ -277,7 +279,7 @@ export function SvgWorldMap({
                       strokeLinejoin: "round",
                     }}
                   >
-                    {marker.city.name} · {label}
+                    {cityName(marker.city.id)} · {label}
                   </text>
                   )}
                 </g>
@@ -291,28 +293,28 @@ export function SvgWorldMap({
         <button
           onClick={() => zoomBy(1.4)}
           className="flex size-8 items-center justify-center rounded-xl text-ink-70 transition-colors hover:bg-ink-08"
-          aria-label="Zoom in"
+          aria-label={t("map.zoomIn")}
         >
           <Plus className="size-4" />
         </button>
         <button
           onClick={() => zoomBy(1 / 1.4)}
           className="flex size-8 items-center justify-center rounded-xl text-ink-70 transition-colors hover:bg-ink-08"
-          aria-label="Zoom out"
+          aria-label={t("map.zoomOut")}
         >
           <Minus className="size-4" />
         </button>
         <button
           onClick={() => setTransform({ scale: 1, x: 0, y: 0 })}
           className="flex size-8 items-center justify-center rounded-xl text-ink-70 transition-colors hover:bg-ink-08"
-          aria-label="Reset view"
+          aria-label={t("map.reset")}
         >
           <Maximize2 className="size-4" />
         </button>
       </div>
 
       <p className="pointer-events-none absolute bottom-4 left-4 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-30">
-        {personalised ? "Match view" : "Activity view"} · drag to pan · scroll or pinch to zoom
+        {personalised ? t("map.legend.match") : t("map.legend.activity")} · {t("map.legend.hint")}
       </p>
     </div>
   );

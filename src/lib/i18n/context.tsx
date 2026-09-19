@@ -1,48 +1,45 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { translateKey, type UIKey } from "@/lib/i18n/dictionary";
+import { createContext, useCallback, useContext, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, createI18n, type I18n } from "@/lib/i18n";
 import type { LanguageCode } from "@/lib/types";
 
-interface I18nValue {
-  language: LanguageCode;
+interface I18nValue extends I18n {
   setLanguage: (language: LanguageCode) => void;
-  t: (key: UIKey) => string;
+  /** True while the server re-renders after a language change. */
+  switching: boolean;
 }
 
 const I18nContext = createContext<I18nValue | null>(null);
 
-const STORAGE_KEY = "reveal.language";
+export function I18nProvider({
+  initialLanguage,
+  children,
+}: {
+  /** Read from the cookie on the server, so the first paint is already correct. */
+  initialLanguage: LanguageCode;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [language, setLanguageState] = useState<LanguageCode>(initialLanguage ?? DEFAULT_LANGUAGE);
+  const [switching, startTransition] = useTransition();
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<LanguageCode>("en");
-
-  // Read after mount rather than during render: the server has no access to
-  // localStorage and a mismatch would hydrate the wrong language.
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "en" || stored === "ja" || stored === "ko" || stored === "zh") {
-        setLanguageState(stored);
-      }
-    } catch {
-      /* storage unavailable — English stays */
-    }
-  }, []);
-
-  const setLanguage = useCallback((next: LanguageCode) => {
-    setLanguageState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      /* non-fatal */
-    }
-    document.documentElement.lang = next;
-  }, []);
+  const setLanguage = useCallback(
+    (next: LanguageCode) => {
+      // Client text flips immediately…
+      setLanguageState(next);
+      document.documentElement.lang = next;
+      document.cookie = `${LANGUAGE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+      // …and the server re-renders everything it owns with the new cookie.
+      startTransition(() => router.refresh());
+    },
+    [router],
+  );
 
   const value = useMemo<I18nValue>(
-    () => ({ language, setLanguage, t: (key: UIKey) => translateKey(key, language) }),
-    [language, setLanguage],
+    () => ({ ...createI18n(language), setLanguage, switching }),
+    [language, setLanguage, switching],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

@@ -34,7 +34,7 @@ export function HomeMatchTabs({
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-30">
-            Personalised for you
+            {t("home.personalised")}
           </p>
           <h2 className="font-display text-xl font-semibold tracking-[-0.02em] sm:text-[22px]">
             {t("home.yourMatch")}
@@ -58,7 +58,7 @@ export function HomeMatchTabs({
             href={pane.href}
             className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-ink-70 transition-colors hover:text-lavender"
           >
-            {t("common.viewAll")} {pane.label.toLowerCase()}
+            {t("home.viewAllOf", { label: pane.label })}
             <ArrowRight className="size-4" />
           </Link>
         </TabsContent>

@@ -15,8 +15,9 @@ import { PersonRow } from "@/components/cards/person-card";
 import { ProjectCard } from "@/components/cards/project-card";
 import { EventCard } from "@/components/cards/event-card";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { CITY_BY_ID, COUNTRY_BY_ID } from "@/lib/data/geo";
-import { BRAND_TYPE_LABELS, CATEGORY_LABELS, LANGUAGE_LABELS, ROLE_LABELS } from "@/lib/labels";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { formatCount, formatDate } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 
@@ -33,12 +34,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function BrandPage({ params }: { params: Promise<{ id: string }> }) {
+  const i18n = await getI18n();
   const { id } = await params;
   const brand = await db.getBrand(id);
   if (!brand) notFound();
 
   const [matches, allPeople, allProjects, allEvents] = await Promise.all([
-    db.matchesFor("brand", 200),
+    db.matchesFor("brand", 200, i18n.language),
     db.listPeople(),
     db.listProjects(),
     db.listEvents(),
@@ -48,8 +50,8 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
   const team = allPeople.filter((p) => brand.memberUserIds.includes(p.id));
   const projects = allProjects.filter((p) => p.brandIds.includes(brand.id));
   const events = allEvents.filter((e) => e.hostBrandId === brand.id);
-  const city = CITY_BY_ID.get(brand.cityId);
-  const country = COUNTRY_BY_ID.get(brand.countryId);
+  const countryId = CITY_BY_ID.get(brand.cityId)?.countryId ?? brand.countryId;
+  const country = COUNTRY_BY_ID.get(countryId);
 
   return (
     <PageContainer>
@@ -68,7 +70,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                 </h1>
                 {brand.verified && <BadgeCheck className="size-5 text-sky" />}
                 <Badge variant="lavender" size="md">
-                  {BRAND_TYPE_LABELS[brand.type]}
+                  {i18n.L.brandType[brand.type]}
                 </Badge>
               </div>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-70">{brand.tagline}</p>
@@ -76,24 +78,24 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="size-4 text-ink-30" />
-                  {city?.name}, {country?.name} {country?.flag}
+                  {i18n.city(brand.cityId)}, {i18n.country(countryId)} {country?.flag}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Building2 className="size-4 text-ink-30" />
-                  Founded {brand.founded} · {brand.teamSize} people
+                  {i18n.t("brandDetail.founded", { year: brand.founded, size: brand.teamSize })}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Users className="size-4 text-ink-30" />
-                  {formatCount(brand.followers)} followers
+                  {i18n.t("common.followers", { count: formatCount(brand.followers) })}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
               {match && <MatchRing score={match.score} />}
-              <SaveButton label="Follow" savedLabel="Following" size="md" />
+              <SaveButton label={i18n.t("common.follow")} savedLabel={i18n.t("common.following")} size="md" />
               <Button asChild variant="primary">
-                <Link href="/messages">Contact brand</Link>
+                <Link href="/messages">{i18n.t("brandDetail.contact")}</Link>
               </Button>
             </div>
           </div>
@@ -105,7 +107,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
           {match && (
             <Card sheen className="p-5">
               <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                Why this matches you
+                {i18n.t("common.whyMatch")}
               </h2>
               <p className="mb-4 text-[13px] leading-relaxed text-ink-70">{match.narrative}</p>
               <MatchReasons reasons={match.reasons} limit={5} variant="list" />
@@ -113,49 +115,53 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
           )}
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Looking for</h2>
+            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+              {i18n.t("brandDetail.lookingFor")}
+            </h2>
             <div className="flex flex-wrap gap-1.5">
               {brand.lookingFor.map((role) => (
                 <Link key={role} href={`/people?role=${role}`}>
                   <Badge variant="mint" size="md">
-                    {ROLE_LABELS[role]}
+                    {i18n.L.role[role]}
                   </Badge>
                 </Link>
               ))}
             </div>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Categories
+              {i18n.t("common.categories")}
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {brand.categories.map((c) => (
                 <Badge key={c} variant="blush" size="sm">
-                  {CATEGORY_LABELS[c]}
+                  {i18n.L.category[c]}
                 </Badge>
               ))}
             </div>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Markets
+              {i18n.t("brandDetail.markets")}
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {brand.marketCityIds.map((cityId) => (
                 <Link key={cityId} href={`/map?city=${cityId}`}>
                   <Badge variant="sky" size="sm">
-                    {CITY_BY_ID.get(cityId)?.name}
+                    {i18n.city(cityId)}
                   </Badge>
                 </Link>
               ))}
             </div>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Languages
+              {i18n.t("common.languages")}
             </h3>
             <p className="text-sm text-ink-70">{brand.languages.map((l) => LANGUAGE_LABELS[l]).join(" · ")}</p>
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Values</h2>
+            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+              {i18n.t("brandDetail.values")}
+            </h2>
             <ul className="space-y-2">
               {brand.values.map((value) => (
                 <li key={value} className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-70">
@@ -172,7 +178,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
             panes={[
               {
                 value: "story",
-                label: "Story",
+                label: i18n.t("brandDetail.tab.story"),
                 node: (
                   <Card className="p-6 sm:p-8">
                     <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink-70">{brand.story}</p>
@@ -181,7 +187,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
               },
               {
                 value: "opportunities",
-                label: "Creators Wanted",
+                label: i18n.t("brandDetail.tab.opportunities"),
                 count: brand.openOpportunities.length,
                 node:
                   brand.openOpportunities.length > 0 ? (
@@ -190,8 +196,8 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                         <Card key={opportunity.id} className="p-5 sm:p-6">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <Badge variant="mint" size="sm" className="mb-2 capitalize">
-                                {opportunity.type.replace(/-/g, " ")}
+                              <Badge variant="mint" size="sm" className="mb-2">
+                                {i18n.L.opportunityType[opportunity.type]}
                               </Badge>
                               <h3 className="font-display text-lg font-semibold tracking-[-0.02em]">
                                 {opportunity.title}
@@ -199,12 +205,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                               <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-50">
                                 <span className="inline-flex items-center gap-1.5">
                                   <MapPin className="size-3.5 text-ink-30" />
-                                  {CITY_BY_ID.get(opportunity.cityId)?.name}
-                                  {opportunity.remote && " · Remote friendly"}
+                                  {i18n.city(opportunity.cityId)}
+                                  {opportunity.remote && ` · ${i18n.t("common.remoteFriendly")}`}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5">
                                   <CalendarDays className="size-3.5 text-ink-30" />
-                                  Closes {formatDate(opportunity.deadline)}
+                                  {i18n.t("brandDetail.closes", { date: formatDate(opportunity.deadline) })}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5">
                                   <Sparkles className="size-3.5 text-ink-30" />
@@ -215,7 +221,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                             <ApplyButton
                               target={opportunity.title}
                               roles={opportunity.roles}
-                              label="Apply"
+                              label={i18n.t("common.apply")}
                               size="sm"
                             />
                           </div>
@@ -225,7 +231,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                           <div className="mt-4 flex flex-wrap gap-1.5">
                             {opportunity.roles.map((role) => (
                               <Badge key={role} variant="lavender" size="sm">
-                                {ROLE_LABELS[role]}
+                                {i18n.L.role[role]}
                               </Badge>
                             ))}
                           </div>
@@ -233,12 +239,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="No open opportunities right now. Follow the brand to hear first." />
+                    <EmptyNote text={i18n.t("brandDetail.empty.opportunities")} />
                   ),
               },
               {
                 value: "products",
-                label: "Products",
+                label: i18n.t("brandDetail.tab.products"),
                 count: brand.products.length,
                 node:
                   brand.products.length > 0 ? (
@@ -268,12 +274,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="This brand has not published products on RE:VEAL." />
+                    <EmptyNote text={i18n.t("brandDetail.empty.products")} />
                   ),
               },
               {
                 value: "projects",
-                label: "Projects",
+                label: i18n.t("common.projects"),
                 count: projects.length,
                 node:
                   projects.length > 0 ? (
@@ -283,12 +289,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="No projects with this brand yet." />
+                    <EmptyNote text={i18n.t("brandDetail.empty.projects")} />
                   ),
               },
               {
                 value: "team",
-                label: "Creators",
+                label: i18n.t("brandDetail.tab.creators"),
                 count: team.length,
                 node:
                   team.length > 0 ? (
@@ -298,12 +304,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                       ))}
                     </Card>
                   ) : (
-                    <EmptyNote text="No team members listed." />
+                    <EmptyNote text={i18n.t("brandDetail.empty.team")} />
                   ),
               },
               {
                 value: "events",
-                label: "Events",
+                label: i18n.t("common.events"),
                 count: events.length,
                 node:
                   events.length > 0 ? (
@@ -313,7 +319,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="No events hosted by this brand." />
+                    <EmptyNote text={i18n.t("brandDetail.empty.events")} />
                   ),
               },
             ]}

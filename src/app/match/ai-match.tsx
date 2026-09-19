@@ -5,10 +5,10 @@ import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/input";
-import { AI_MATCH_EXAMPLES } from "@/lib/match/interpret";
 import type { Intent } from "@/lib/match/interpret";
-import { CITY_BY_ID, COUNTRY_BY_ID } from "@/lib/data/geo";
-import { CATEGORY_LABELS, ROLE_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
+import type { UIKey } from "@/lib/i18n";
+import { COUNTRY_BY_ID, CITY_BY_ID } from "@/lib/data/geo";
 import type { MatchResult } from "@/lib/types";
 
 export interface AiMatchResponse {
@@ -25,6 +25,15 @@ export interface AiMatchResponse {
  * plus rule-based re-ranking. Nothing in this component changes when a model
  * is connected.
  */
+const EXAMPLE_KEYS: UIKey[] = [
+  "match.example.1",
+  "match.example.2",
+  "match.example.3",
+  "match.example.4",
+  "match.example.5",
+  "match.example.6",
+];
+
 export function AiMatch({
   onResults,
   autoOpen = false,
@@ -32,6 +41,7 @@ export function AiMatch({
   onResults: (response: AiMatchResponse | undefined) => void;
   autoOpen?: boolean;
 }) {
+  const { t, L, city, country } = useI18n();
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [intent, setIntent] = useState<Intent | undefined>();
@@ -53,7 +63,7 @@ export function AiMatch({
       setIntent(data.intent);
       onResults(data);
     } catch {
-      setError("Could not reach the match service. Try again.");
+      setError(t("match.ai.error"));
       onResults(undefined);
     } finally {
       setLoading(false);
@@ -79,14 +89,13 @@ export function AiMatch({
           <div className="min-w-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-50 backdrop-blur">
               <Wand2 className="size-3.5 text-lavender" />
-              AI Match
+              {t("topbar.aiMatch")}
             </span>
             <h2 className="mt-4 font-display text-2xl font-semibold tracking-[-0.03em] sm:text-[28px]">
-              Describe who you want to work with.
+              {t("match.ai.title")}
             </h2>
             <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-ink-70">
-              あなたにおすすめの人・ブランド・プロジェクトをAIが探します。 Write it in any language —
-              Japanese, English, Korean or Chinese.
+              {t("match.ai.description")}
             </p>
           </div>
         </div>
@@ -99,7 +108,7 @@ export function AiMatch({
             onKeyDown={(event) => {
               if ((event.metaKey || event.ctrlKey) && event.key === "Enter") run(prompt);
             }}
-            placeholder="韓国の美容クリエイターと作品を作りたい / I want to collaborate with a Japanese skincare brand"
+            placeholder={t("match.ai.placeholder")}
             className="bg-white/80 text-[15px]"
           />
           <Button
@@ -110,15 +119,17 @@ export function AiMatch({
             className="lg:mb-1"
           >
             {loading ? <Loader2 className="animate-spin" /> : <Sparkles />}
-            {loading ? "Matching…" : "Start AI Match"}
+            {loading ? t("match.ai.matching") : t("match.ai.start")}
           </Button>
         </div>
 
         {!intent && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {AI_MATCH_EXAMPLES.map((example) => (
+            {EXAMPLE_KEYS.map((key) => {
+              const example = t(key);
+              return (
               <button
-                key={example}
+                key={key}
                 onClick={() => {
                   setPrompt(example);
                   run(example);
@@ -127,7 +138,8 @@ export function AiMatch({
               >
                 {example}
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -136,27 +148,27 @@ export function AiMatch({
         {intent && (
           <div className="mt-5 rounded-2xl border border-white/70 bg-white/70 p-4 backdrop-blur">
             <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-30">
-              Understood as
+              {t("match.ai.understood")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {intent.cityIds.map((id) => (
                 <Badge key={id} variant="sky" size="sm">
-                  {CITY_BY_ID.get(id)?.name}
+                  {city(id)}
                 </Badge>
               ))}
               {intent.countryIds.map((id) => (
                 <Badge key={id} variant="sky" size="sm">
-                  {COUNTRY_BY_ID.get(id)?.name} {COUNTRY_BY_ID.get(id)?.flag}
+                  {country(id)} {COUNTRY_BY_ID.get(id)?.flag}
                 </Badge>
               ))}
               {intent.categories.map((c) => (
                 <Badge key={c} variant="lavender" size="sm">
-                  {CATEGORY_LABELS[c]}
+                  {L.category[c]}
                 </Badge>
               ))}
               {intent.roles.map((r) => (
                 <Badge key={r} variant="mint" size="sm">
-                  {ROLE_LABELS[r]}
+                  {L.role[r]}
                 </Badge>
               ))}
               {intent.kinds.map((k) => (
@@ -169,7 +181,7 @@ export function AiMatch({
                 intent.categories.length === 0 &&
                 intent.roles.length === 0 && (
                   <span className="text-[13px] text-ink-50">
-                    Nothing specific recognised — showing your strongest matches overall.
+                    {t("match.ai.nothingRecognised")}
                   </span>
                 )}
             </div>
@@ -181,14 +193,14 @@ export function AiMatch({
               }}
               className="mt-3 text-xs font-medium text-ink-30 transition-colors hover:text-lavender"
             >
-              Clear and start again
+              {t("match.ai.clearRestart")}
             </button>
           </div>
         )}
 
         {autoOpen && !intent && (
           <p className="mt-4 text-xs text-ink-30">
-            Tip: press ⌘/Ctrl + Enter to run without leaving the keyboard.
+            {t("match.ai.tip")}
           </p>
         )}
       </div>

@@ -18,30 +18,42 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n/context";
+import type { UIKey } from "@/lib/i18n";
 import type { SearchEntityKind, SearchResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const KIND_META: Record<SearchEntityKind, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
-  person: { icon: Users, label: "Person" },
-  brand: { icon: Building2, label: "Brand" },
-  project: { icon: Briefcase, label: "Project" },
-  event: { icon: CalendarDays, label: "Event" },
-  post: { icon: Compass, label: "Post" },
-  skill: { icon: Sparkles, label: "Skill" },
-  city: { icon: Globe, label: "City" },
-  course: { icon: GraduationCap, label: "Course" },
+const KIND_ICON: Record<SearchEntityKind, React.ComponentType<{ className?: string }>> = {
+  person: Users,
+  brand: Building2,
+  project: Briefcase,
+  event: CalendarDays,
+  post: Compass,
+  skill: Sparkles,
+  city: Globe,
+  course: GraduationCap,
 };
 
-const QUICK_LINKS = [
-  { label: "Makeup creators in Seoul", href: "/people?category=makeup&city=seoul" },
-  { label: "Projects recruiting now", href: "/projects?status=recruiting" },
-  { label: "Brands looking for creators", href: "/brands?looking=creator" },
-  { label: "Events in Tokyo", href: "/events?city=tokyo" },
+const KIND_KEY: Record<SearchEntityKind, UIKey> = {
+  person: "search.kind.person",
+  brand: "search.kind.brand",
+  project: "search.kind.project",
+  event: "search.kind.event",
+  post: "search.kind.post",
+  skill: "search.kind.skill",
+  city: "search.kind.city",
+  course: "search.kind.course",
+};
+
+const QUICK_LINKS: { key: UIKey; href: string }[] = [
+  { key: "search.quick.creatorsSeoul", href: "/people?category=makeup&city=seoul" },
+  { key: "search.quick.recruiting", href: "/projects?status=recruiting" },
+  { key: "search.quick.brandsCreators", href: "/brands?looking=creator" },
+  { key: "search.quick.eventsTokyo", href: "/events?city=tokyo" },
 ];
 
 export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +78,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     setLoading(true);
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, { signal: controller.signal })
+      fetch(`/api/search?q=${encodeURIComponent(trimmed)}&lang=${language}`, { signal: controller.signal })
         .then((res) => res.json())
         .then((data: { results: SearchResult[] }) => {
           setResults(data.results);
@@ -79,7 +91,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, language]);
 
   const go = useCallback(
     (href: string) => {
@@ -112,7 +124,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
           e.preventDefault();
           inputRef.current?.focus();
         }}
-        aria-label="Global search"
+        aria-label={t("search.aria")}
       >
         <div className="flex items-center gap-3 border-b border-ink-08 px-5 py-4">
           {loading ? (
@@ -144,7 +156,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
                     onClick={() => go(link.href)}
                     className="rounded-full border border-ink-08 bg-white px-3 py-1.5 text-xs font-medium text-ink-70 transition-colors hover:border-lavender/40 hover:text-ink"
                   >
-                    {link.label}
+                    {t(link.key)}
                   </button>
                 ))}
               </div>
@@ -154,7 +166,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
           ) : (
             <ul>
               {results.map((result, index) => {
-                const Meta = KIND_META[result.kind];
+                const Icon = KIND_ICON[result.kind];
                 return (
                   <li key={`${result.kind}-${result.id}`}>
                     <button
@@ -176,8 +188,8 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
                         </Badge>
                       )}
                       <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-ink-30">
-                        <Meta.icon className="size-3.5" />
-                        {Meta.label}
+                        <Icon className="size-3.5" />
+                        {t(KIND_KEY[result.kind])}
                       </span>
                     </button>
                   </li>

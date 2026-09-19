@@ -44,7 +44,7 @@ export function TopBar({ viewer, counts }: { viewer: PersonView; counts: Sidebar
           <button
             onClick={() => setMenuOpen((open) => !open)}
             className="-ml-1 flex size-9 items-center justify-center rounded-xl text-ink-70 transition-colors hover:bg-ink-08 lg:hidden"
-            aria-label="Open navigation"
+            aria-label={t("topbar.openNav")}
           >
             {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -68,7 +68,7 @@ export function TopBar({ viewer, counts }: { viewer: PersonView; counts: Sidebar
             <button
               onClick={() => setSearchOpen(true)}
               className="flex size-9 items-center justify-center rounded-xl text-ink-70 transition-colors hover:bg-ink-08 sm:hidden"
-              aria-label="Search"
+              aria-label={t("topbar.searchLabel")}
             >
               <Search className="size-5" />
             </button>
@@ -76,7 +76,7 @@ export function TopBar({ viewer, counts }: { viewer: PersonView; counts: Sidebar
             <Button asChild variant="accent" size="sm" className="hidden sm:inline-flex">
               <Link href="/match?ai=1">
                 <Sparkles />
-                AI Match
+                {t("topbar.aiMatch")}
               </Link>
             </Button>
 
@@ -85,7 +85,7 @@ export function TopBar({ viewer, counts }: { viewer: PersonView; counts: Sidebar
             <Link
               href="/notifications"
               className="relative flex size-9 items-center justify-center rounded-xl text-ink-70 transition-colors hover:bg-ink-08"
-              aria-label="Notifications"
+              aria-label={t("topbar.notifications")}
             >
               <Bell className="size-5" />
               {counts.notifications > 0 && (
@@ -95,7 +95,7 @@ export function TopBar({ viewer, counts }: { viewer: PersonView; counts: Sidebar
               )}
             </Link>
 
-            <Link href="/profile" className="lg:hidden" aria-label="My profile">
+            <Link href="/profile" className="lg:hidden" aria-label={t("topbar.myProfile")}>
               <Avatar seed={viewer.avatarSeed} name={viewer.name} size="sm" />
             </Link>
           </div>

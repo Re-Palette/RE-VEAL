@@ -10,8 +10,8 @@ import { ChipGroup, FilterPanel, MultiChipGroup } from "@/components/filters/chi
 import { EmptyState } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
 import { WorldMap } from "@/components/map/world-map";
+import { useI18n } from "@/lib/i18n/context";
 import { CITY_BY_ID } from "@/lib/data/geo";
-import { CATEGORY_LABELS, EVENT_TYPE_LABELS, REGION_LABELS } from "@/lib/labels";
 import {
   BEAUTY_CATEGORIES,
   EVENT_TYPES,
@@ -26,12 +26,6 @@ import type { MapMarker } from "@/components/map/types";
 
 type SortKey = "date" | "match" | "attending";
 
-const SORTS: { value: SortKey; label: string }[] = [
-  { value: "date", label: "Soonest" },
-  { value: "match", label: "Best match" },
-  { value: "attending", label: "Most attending" },
-];
-
 export function EventsDirectory({
   events,
   matches,
@@ -43,6 +37,7 @@ export function EventsDirectory({
 }) {
   const params = useSearchParams();
   const router = useRouter();
+  const { t, L, city: cityLabel } = useI18n();
   const cityParam = params.get("city") ?? undefined;
 
   const [query, setQuery] = useState("");
@@ -53,6 +48,12 @@ export function EventsDirectory({
   const [city, setCity] = useState<string | undefined>(cityParam);
   const [sort, setSort] = useState<SortKey>("date");
   const [showMap, setShowMap] = useState(true);
+
+  const SORTS: { value: SortKey; label: string }[] = [
+    { value: "date", label: t("events.sort.date") },
+    { value: "match", label: t("people.sort.match") },
+    { value: "attending", label: t("events.sort.attending") },
+  ];
 
   const scoreById = useMemo(() => new Map(matches.map((m) => [m.targetId, m])), [matches]);
   const cityById = useMemo(() => new Map(cities.map((c) => [c.id, c])), [cities]);
@@ -66,7 +67,7 @@ export function EventsDirectory({
       if (region !== "all" && CITY_BY_ID.get(event.cityId)?.region !== region) return false;
       if (onlineOnly && !event.online) return false;
       if (q) {
-        const haystack = [event.title, event.summary, event.venue, event.hostName, CITY_BY_ID.get(event.cityId)?.name ?? ""]
+        const haystack = [event.title, event.summary, event.venue, event.hostName, cityLabel(event.cityId)]
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -108,13 +109,13 @@ export function EventsDirectory({
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Connect"
-        title="Events"
-        description="POPUPs, exhibitions, conferences, meetups, workshops and competitions — plotted on the same map as everything else."
+        eyebrow={t("nav.connect")}
+        title={t("events.title")}
+        description={t("events.description")}
         action={
           <Button variant="outline" size="sm" onClick={() => setShowMap((open) => !open)}>
             <MapIcon />
-            {showMap ? "Hide map" : "Show map"}
+            {showMap ? t("events.hideMap") : t("events.showMap")}
           </Button>
         }
       />
@@ -134,7 +135,7 @@ export function EventsDirectory({
           />
           {city && (
             <p className="mt-3 text-sm text-ink-50">
-              Showing events in <span className="font-semibold text-ink">{cityById.get(city)?.name}</span>.{" "}
+              {t("events.showingIn", { city: cityLabel(city) })}{" "}
               <button
                 onClick={() => {
                   setCity(undefined);
@@ -142,7 +143,7 @@ export function EventsDirectory({
                 }}
                 className="font-medium text-lavender hover:underline"
               >
-                Show every city
+                {t("events.showAllCities")}
               </button>
             </p>
           )}
@@ -152,7 +153,7 @@ export function EventsDirectory({
       <FilterPanel
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search events by title, host or venue…"
+        placeholder={t("events.searchPlaceholder")}
         resultCount={filtered.length}
         activeCount={activeCount}
         onClear={() => {
@@ -168,55 +169,55 @@ export function EventsDirectory({
         advanced={
           <>
             <ChipGroup
-              label="Location"
+              label={t("common.location")}
               tone="sky"
               value={region}
               onChange={setRegion}
               options={[
-                { value: "all", label: "Worldwide" },
-                ...REGIONS.map((r) => ({ value: r as string, label: REGION_LABELS[r] })),
+                { value: "all", label: t("common.worldwide") },
+                ...REGIONS.map((r) => ({ value: r as string, label: L.region[r] })),
               ]}
             />
             <ChipGroup
-              label="Attendance"
+              label={t("events.filter.attendance")}
               tone="lavender"
               value={onlineOnly ? "online" : "any"}
               onChange={(value) => setOnlineOnly(value === "online")}
               options={[
-                { value: "any", label: "In person and online" },
-                { value: "online", label: "Online available" },
+                { value: "any", label: t("events.filter.inPersonOnline") },
+                { value: "online", label: t("events.filter.onlineAvailable") },
               ]}
             />
           </>
         }
       >
         <ChipGroup
-          label="Event type"
+          label={t("events.filter.type")}
           value={type}
           onChange={setType}
           options={[
-            { value: "all" as const, label: "All events" },
-            ...EVENT_TYPES.map((t) => ({ value: t, label: EVENT_TYPE_LABELS[t] })),
+            { value: "all" as const, label: t("events.filter.allEvents") },
+            ...EVENT_TYPES.map((type) => ({ value: type, label: L.eventType[type] })),
           ]}
         />
         <MultiChipGroup
-          label="Beauty category"
+          label={t("common.beautyCategory")}
           values={categories}
           onToggle={(value) =>
             setCategories((current) =>
               current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
             )
           }
-          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: L.category[c] }))}
         />
-        <ChipGroup label="Sort" value={sort} onChange={setSort} options={SORTS} />
+        <ChipGroup label={t("common.sort")} value={sort} onChange={setSort} options={SORTS} />
       </FilterPanel>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
-          title="Nothing scheduled with those filters"
-          description="Try another region or clear the city selection on the map above."
+          title={t("events.empty.title")}
+          description={t("events.empty.description")}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

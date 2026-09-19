@@ -13,15 +13,9 @@ import { SaveButton } from "@/components/actions/save-button";
 import { MatchReasons, MatchRing } from "@/components/match/match-score";
 import { PersonRow } from "@/components/cards/person-card";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { CITY_BY_ID, COUNTRY_BY_ID } from "@/lib/data/geo";
-import { skillLabel } from "@/lib/data/taxonomy";
-import {
-  CATEGORY_LABELS,
-  LANGUAGE_LABELS,
-  PROJECT_STATUS_LABELS,
-  PROJECT_TYPE_LABELS,
-  ROLE_LABELS,
-} from "@/lib/labels";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { formatDateRange } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 
@@ -38,12 +32,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const i18n = await getI18n();
   const { id } = await params;
   const project = await db.getProject(id);
   if (!project) notFound();
 
   const [matches, allPeople, allBrands] = await Promise.all([
-    db.matchesFor("project", 200),
+    db.matchesFor("project", 200, i18n.language),
     db.listPeople(),
     db.listBrands(),
   ]);
@@ -71,10 +66,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               size="md"
               className="bg-white/85 backdrop-blur"
             >
-              {PROJECT_STATUS_LABELS[project.status]}
+              {i18n.L.projectStatus[project.status]}
             </Badge>
             <Badge variant="default" size="md" className="bg-white/85 backdrop-blur">
-              {PROJECT_TYPE_LABELS[project.type]}
+              {i18n.L.projectType[project.type]}
             </Badge>
           </div>
         </div>
@@ -91,7 +86,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="size-4 text-ink-30" />
                   {project.cityIds
-                    .map((cityId) => `${CITY_BY_ID.get(cityId)?.name} ${COUNTRY_BY_ID.get(CITY_BY_ID.get(cityId)?.countryId ?? "")?.flag ?? ""}`)
+                    .map(
+                      (cityId) =>
+                        `${i18n.city(cityId)} ${COUNTRY_BY_ID.get(CITY_BY_ID.get(cityId)?.countryId ?? "")?.flag ?? ""}`,
+                    )
                     .join(" × ")}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
@@ -105,7 +103,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 {project.remoteFriendly && (
                   <span className="inline-flex items-center gap-1.5">
                     <Globe2 className="size-4 text-ink-30" />
-                    Remote friendly
+                    {i18n.t("common.remoteFriendly")}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1.5">
@@ -121,7 +119,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 <ApplyButton
                   target={project.title}
                   roles={openSlots.map((s) => s.role)}
-                  label="Apply to Project"
+                  label={i18n.t("projectDetail.apply")}
                   size="lg"
                 />
                 <SaveButton size="sm" />
@@ -137,7 +135,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           {match && (
             <Card sheen className="p-6">
               <h2 className="mb-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                Why this project matches you
+                {i18n.t("projectDetail.whyMatch")}
               </h2>
               <p className="text-[15px] leading-relaxed text-ink-70">{match.narrative}</p>
               <MatchReasons reasons={match.reasons} limit={6} className="mt-4" />
@@ -145,20 +143,24 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           )}
 
           <Card className="p-6 sm:p-8">
-            <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">Project overview</h2>
+            <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">
+              {i18n.t("projectDetail.overview")}
+            </h2>
             <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink-70">{project.overview}</p>
 
             <div className="mt-6 flex flex-wrap gap-1.5">
               {project.categories.map((c) => (
                 <Badge key={c} variant="blush" size="md">
-                  {CATEGORY_LABELS[c]}
+                  {i18n.L.category[c]}
                 </Badge>
               ))}
             </div>
           </Card>
 
           <Card className="p-6 sm:p-8">
-            <h2 className="mb-5 font-display text-lg font-semibold tracking-[-0.02em]">Recruiting</h2>
+            <h2 className="mb-5 font-display text-lg font-semibold tracking-[-0.02em]">
+              {i18n.t("projectDetail.recruiting")}
+            </h2>
             <div className="space-y-4">
               {project.roleSlots.map((slot) => {
                 const open = slot.count - slot.filled;
@@ -166,23 +168,25 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   <div key={slot.role} className="rounded-2xl border border-ink-08 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold">{ROLE_LABELS[slot.role]}</p>
+                        <p className="text-sm font-semibold">{i18n.L.role[slot.role]}</p>
                         {slot.skillIds.length > 0 && (
                           <p className="mt-1 text-xs text-ink-50">
-                            Needs {slot.skillIds.map(skillLabel).join(", ")}
+                            {i18n.t("projectDetail.needs", {
+                              skills: i18n.list(slot.skillIds.map((id) => i18n.skill(id))),
+                            })}
                           </p>
                         )}
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-ink-50">
-                          {slot.filled} / {slot.count} filled
+                          {i18n.t("projectDetail.filled", { filled: slot.filled, total: slot.count })}
                         </span>
                         {open > 0 ? (
                           <Badge variant="mint" size="sm">
-                            {open} open
+                            {i18n.t("projectDetail.openCount", { count: open })}
                           </Badge>
                         ) : (
-                          <Badge size="sm">Full</Badge>
+                          <Badge size="sm">{i18n.t("common.full")}</Badge>
                         )}
                       </div>
                     </div>
@@ -194,7 +198,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           </Card>
 
           <Card className="p-6 sm:p-8">
-            <h2 className="mb-5 font-display text-lg font-semibold tracking-[-0.02em]">Timeline</h2>
+            <h2 className="mb-5 font-display text-lg font-semibold tracking-[-0.02em]">
+              {i18n.t("projectDetail.timeline")}
+            </h2>
             <ol className="relative space-y-6 border-l border-ink-08 pl-6">
               {project.timeline.map((phase) => (
                 <li key={phase.id} className="relative">
@@ -211,7 +217,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   <p className="mt-0.5 text-xs text-ink-50">{phase.period}</p>
                   {phase.status === "active" && (
                     <Badge variant="lavender" size="sm" className="mt-2">
-                      In progress now
+                      {i18n.t("projectDetail.inProgressNow")}
                     </Badge>
                   )}
                 </li>
@@ -226,7 +232,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
                 <Users className="size-4 text-lavender" />
-                Members
+                {i18n.t("common.members")}
               </h2>
               <span className="text-xs text-ink-50">
                 {filledTotal} / {capacityTotal}
@@ -243,7 +249,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
           {owner && (
             <Card className="p-5">
-              <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Led by</h2>
+              <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+                {i18n.t("projectDetail.ledBy")}
+              </h2>
               <Link href={`/people/${owner.id}`} className="flex items-center gap-3">
                 <Avatar seed={owner.avatarSeed} name={owner.name} size="lg" />
                 <span className="min-w-0">
@@ -254,7 +262,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               <Button asChild variant="outline" size="sm" className="mt-4 w-full">
                 <Link href="/messages">
                   <MessageCircle />
-                  Message the lead
+                  {i18n.t("projectDetail.messageLead")}
                 </Link>
               </Button>
             </Card>
@@ -263,7 +271,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           {brands.length > 0 && (
             <Card className="p-5">
               <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                Related brands
+                {i18n.t("projectDetail.relatedBrands")}
               </h2>
               <div className="space-y-2">
                 {brands.map((brand) => (
@@ -284,18 +292,23 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           )}
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Required skills</h2>
+            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+              {i18n.t("projectDetail.requiredSkills")}
+            </h2>
             <div className="flex flex-wrap gap-1.5">
               {project.requiredSkillIds.map((skillId) => (
                 <Link key={skillId} href={`/people?skill=${skillId}`}>
                   <Badge variant="lavender" size="sm">
-                    {skillLabel(skillId)}
+                    {i18n.skill(skillId)}
                   </Badge>
                 </Link>
               ))}
             </div>
             <p className="mt-4 text-xs text-ink-50">
-              {project.applicationsCount} applications so far · {project.cityIds.length} cities
+              {i18n.t("projectDetail.applications", {
+                count: project.applicationsCount,
+                cities: project.cityIds.length,
+              })}
             </p>
           </Card>
         </aside>

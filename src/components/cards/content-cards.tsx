@@ -1,12 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Clock, Heart, MessageSquare, Star, Users } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { CITY_BY_ID } from "@/lib/data/geo";
 import { BRAND_BY_ID } from "@/lib/data/brands";
 import { PERSON_BY_ID } from "@/lib/data/people";
-import { CATEGORY_LABELS, LEARN_TRACK_LABELS, POST_KIND_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
 import type { Course, LanguageCode, PortfolioItem, Post } from "@/lib/types";
 import { formatCount, relativeTime } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
@@ -15,9 +16,9 @@ import { TranslatableText } from "@/components/content/translatable-text";
 /* Post --------------------------------------------------------------------- */
 
 export function PostCard({ post, featured = false }: { post: Post; featured?: boolean }) {
+  const { L, city } = useI18n();
   const author = post.authorUserId ? PERSON_BY_ID.get(post.authorUserId) : undefined;
   const brand = post.authorBrandId ? BRAND_BY_ID.get(post.authorBrandId) : undefined;
-  const city = CITY_BY_ID.get(post.cityId);
   const authorName = author?.name ?? brand?.name ?? "RE:VEAL";
   const authorSeed = author?.avatarSeed ?? brand?.avatarSeed ?? post.coverSeed;
   const authorHref = author ? `/people/${author.id}` : brand ? `/brands/${brand.id}` : "/discover";
@@ -32,7 +33,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
       >
         <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent" />
         <Badge variant="ink" size="sm" className="absolute left-4 top-3">
-          {POST_KIND_LABELS[post.kind]}
+          {L.postKind[post.kind]}
         </Badge>
       </div>
 
@@ -56,7 +57,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
         <div className="mt-3 flex flex-wrap gap-1.5">
           {post.categories.slice(0, 2).map((c) => (
             <Badge key={c} variant="sky" size="sm">
-              {CATEGORY_LABELS[c]}
+              {L.category[c]}
             </Badge>
           ))}
           {post.tags.slice(0, featured ? 3 : 1).map((tag) => (
@@ -72,7 +73,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
             <span className="min-w-0">
               <span className="block truncate text-xs font-medium">{authorName}</span>
               <span className="block truncate text-[11px] text-ink-30">
-                {city?.name} · {relativeTime(post.createdAt)}
+                {city(post.cityId)} · {relativeTime(post.createdAt)}
               </span>
             </span>
           </Link>
@@ -95,6 +96,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
 /* Course ------------------------------------------------------------------- */
 
 export function CourseCard({ course }: { course: Course }) {
+  const { t, L } = useI18n();
   const instructor = PERSON_BY_ID.get(course.instructorUserId);
   const hours = Math.floor(course.durationMinutes / 60);
   const minutes = course.durationMinutes % 60;
@@ -105,17 +107,17 @@ export function CourseCard({ course }: { course: Course }) {
         <div className="relative h-24 shrink-0" style={gradientStyle(course.coverSeed)}>
           <div className="absolute inset-0 bg-gradient-to-t from-white/85 to-transparent" />
           <Badge variant="ink" size="sm" className="absolute left-4 top-3">
-            {LEARN_TRACK_LABELS[course.track]}
+            {L.learnTrack[course.track]}
           </Badge>
         </div>
 
         <div className="flex flex-1 flex-col p-5">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-30">
-            <span>{course.level}</span>
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-medium tracking-[0.12em] text-ink-30">
+            <span>{L.courseLevel[course.level]}</span>
             <span className="size-1 rounded-full bg-ink-15" />
             <span className="inline-flex items-center gap-1">
               <Clock className="size-3" />
-              {hours}h {minutes}m
+              {t("learn.duration", { hours, minutes })}
             </span>
           </div>
 
@@ -149,19 +151,19 @@ export function CourseCard({ course }: { course: Course }) {
 /* Portfolio ---------------------------------------------------------------- */
 
 export function PortfolioCard({ item, showOwner = false }: { item: PortfolioItem; showOwner?: boolean }) {
+  const { t, L, city } = useI18n();
   const owner = PERSON_BY_ID.get(item.userId);
-  const city = CITY_BY_ID.get(item.cityId);
 
   return (
     <Card interactive className="flex h-full flex-col overflow-hidden">
       <div className="relative aspect-[4/3] shrink-0" style={gradientStyle(item.coverSeed)}>
         <div className="absolute inset-0 bg-gradient-to-t from-white/75 via-transparent to-transparent" />
-        <Badge variant="default" size="sm" className="absolute left-4 top-3 bg-white/85 capitalize backdrop-blur">
-          {item.kind}
+        <Badge variant="default" size="sm" className="absolute left-4 top-3 bg-white/85 backdrop-blur">
+          {L.portfolioKind[item.kind]}
         </Badge>
         {item.featured && (
           <Badge variant="gold" size="sm" className="absolute right-4 top-3 bg-white/85 backdrop-blur">
-            Featured
+            {t("portfolio.featured")}
           </Badge>
         )}
       </div>
@@ -173,7 +175,7 @@ export function PortfolioCard({ item, showOwner = false }: { item: PortfolioItem
         <div className="mt-3 flex flex-wrap gap-1.5">
           {item.categories.slice(0, 2).map((c) => (
             <Badge key={c} variant="lavender" size="sm">
-              {CATEGORY_LABELS[c]}
+              {L.category[c]}
             </Badge>
           ))}
         </div>
@@ -186,7 +188,7 @@ export function PortfolioCard({ item, showOwner = false }: { item: PortfolioItem
             </Link>
           ) : (
             <span>
-              {city?.name} · {item.year}
+              {city(item.cityId)} · {item.year}
             </span>
           )}
           <span className="inline-flex items-center gap-1">

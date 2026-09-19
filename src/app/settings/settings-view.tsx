@@ -10,19 +10,13 @@ import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { Separator, Switch } from "@/components/ui/misc";
 import { useI18n } from "@/lib/i18n/context";
-import { CITIES, CITY_BY_ID } from "@/lib/data/geo";
-import {
-  AVAILABILITY_LABELS,
-  CATEGORY_LABELS,
-  LANGUAGE_LABELS,
-  OPEN_TO_LABELS,
-  ROLE_LABELS,
-} from "@/lib/labels";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
+import { CITIES } from "@/lib/data/geo";
 import { AVAILABILITY, LANGUAGES, OPEN_TO, type Availability, type LanguageCode, type OpenTo, type PersonView } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function SettingsView({ viewer }: { viewer: PersonView }) {
-  const { language, setLanguage } = useI18n();
+  const { language, setLanguage, t, L, city: cityName } = useI18n();
   const p = viewer.profile;
 
   const [name, setName] = useState(viewer.name);
@@ -43,9 +37,9 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Personal"
-        title="Settings"
-        description="Your profile is what the matching engine reads. The more precisely you fill it in, the better the matches get."
+        eyebrow={t("nav.personal")}
+        title={t("settings.title")}
+        description={t("settings.description")}
         action={
           <Button
             variant="accent"
@@ -55,7 +49,7 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
               window.setTimeout(() => setSaved(false), 2200);
             }}
           >
-            {saved ? "Saved" : "Save changes"}
+            {saved ? t("common.saved") : t("settings.saveChanges")}
           </Button>
         }
       />
@@ -65,17 +59,17 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
           <Card className="p-6 sm:p-8">
             <h2 className="mb-5 flex items-center gap-2 font-display text-lg font-semibold tracking-[-0.02em]">
               <UserRound className="size-5 text-lavender" />
-              Profile
+              {t("settings.profile")}
             </h2>
 
             <div className="flex flex-wrap items-center gap-5">
               <Avatar seed={viewer.avatarSeed} name={viewer.name} size="xl" />
               <div>
                 <Button variant="outline" size="sm">
-                  Change image
+                  {t("settings.changeImage")}
                 </Button>
                 <p className="mt-2 text-xs text-ink-30">
-                  Until you upload one, RE:VEAL generates a gradient from your handle.
+                  {t("settings.imageNote")}
                 </p>
               </div>
             </div>
@@ -83,30 +77,30 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
             <Separator className="my-6" />
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Name">
+              <Field label={t("settings.field.name")}>
                 <Input value={name} onChange={(event) => setName(event.target.value)} />
               </Field>
-              <Field label="Handle">
+              <Field label={t("settings.field.handle")}>
                 <Input value={`@${viewer.handle}`} readOnly className="text-ink-50" />
               </Field>
             </div>
 
-            <Field label="Headline" className="mt-5">
+            <Field label={t("settings.field.headline")} className="mt-5">
               <Input value={headline} onChange={(event) => setHeadline(event.target.value)} />
             </Field>
 
-            <Field label="Bio" className="mt-5">
+            <Field label={t("settings.field.bio")} className="mt-5">
               <Textarea rows={5} value={bio} onChange={(event) => setBio(event.target.value)} />
             </Field>
 
-            <Field label="Role" className="mt-5">
+            <Field label={t("common.role")} className="mt-5">
               <div className="flex flex-wrap gap-1.5">
                 <Badge variant="lavender" size="lg">
-                  {ROLE_LABELS[p.role]}
+                  {L.role[p.role]}
                 </Badge>
                 {p.secondaryRoles.map((role) => (
                   <Badge key={role} size="lg">
-                    {ROLE_LABELS[role]}
+                    {L.role[role]}
                   </Badge>
                 ))}
               </div>
@@ -116,10 +110,10 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
           <Card className="p-6 sm:p-8">
             <h2 className="mb-5 flex items-center gap-2 font-display text-lg font-semibold tracking-[-0.02em]">
               <MapPin className="size-5 text-sky" />
-              Location &amp; availability
+              {t("settings.locationSection")}
             </h2>
 
-            <Field label="Based in">
+            <Field label={t("settings.basedIn")}>
               <select
                 value={cityId}
                 onChange={(event) => setCityId(event.target.value)}
@@ -127,13 +121,13 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
               >
                 {CITIES.map((city) => (
                   <option key={city.id} value={city.id}>
-                    {city.name}
+                    {cityName(city.id)}
                   </option>
                 ))}
               </select>
             </Field>
 
-            <Field label="Availability" className="mt-5">
+            <Field label={t("common.availability")} className="mt-5">
               <div className="flex flex-wrap gap-1.5">
                 {AVAILABILITY.map((value) => (
                   <button
@@ -146,13 +140,13 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
                         : "border-ink-08 bg-white text-ink-50 hover:border-ink-30",
                     )}
                   >
-                    {AVAILABILITY_LABELS[value]}
+                    {L.availability[value]}
                   </button>
                 ))}
               </div>
             </Field>
 
-            <Field label="Open to" className="mt-5">
+            <Field label={t("common.openTo")} className="mt-5">
               <div className="flex flex-wrap gap-1.5">
                 {OPEN_TO.map((value) => (
                   <button
@@ -165,7 +159,7 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
                         : "border-ink-08 bg-white text-ink-50 hover:border-ink-30",
                     )}
                   >
-                    {OPEN_TO_LABELS[value]}
+                    {L.openTo[value]}
                   </button>
                 ))}
               </div>
@@ -175,10 +169,10 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
           <Card className="p-6 sm:p-8">
             <h2 className="mb-5 flex items-center gap-2 font-display text-lg font-semibold tracking-[-0.02em]">
               <Languages className="size-5 text-blush" />
-              Language &amp; translation
+              {t("settings.languageSection")}
             </h2>
 
-            <Field label="Interface language">
+            <Field label={t("settings.interfaceLanguage")}>
               <div className="flex flex-wrap gap-1.5">
                 {LANGUAGES.map((code) => (
                   <button
@@ -197,7 +191,7 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
               </div>
             </Field>
 
-            <Field label="Languages you work in" className="mt-5">
+            <Field label={t("settings.workLanguages")} className="mt-5">
               <div className="flex flex-wrap gap-1.5">
                 {LANGUAGES.map((code) => (
                   <button
@@ -228,7 +222,7 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
           <Card className="p-6 sm:p-8">
             <h2 className="mb-5 flex items-center gap-2 font-display text-lg font-semibold tracking-[-0.02em]">
               <Shield className="size-5 text-mint" />
-              Privacy &amp; matching
+              {t("settings.privacySection")}
             </h2>
 
             <ToggleRow
@@ -251,19 +245,18 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
           <Card sheen className="p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
               <Sparkles className="size-4 text-lavender" />
-              Match strength
+              {t("settings.matchStrength")}
             </h2>
             <p className="text-[13px] leading-relaxed text-ink-70">
-              Your profile is complete enough to score well on skills, location and language. Adding two more
-              goals and a second portfolio piece is what would move it most.
+              {t("settings.matchStrengthBody")}
             </p>
             <ul className="mt-4 space-y-2 text-[13px]">
               {[
-                ["Skills", p.skillIds.length >= 4],
-                ["Interests", p.interestIds.length >= 3],
-                ["Goals", p.goals.length >= 3],
-                ["Target cities", p.targetCityIds.length >= 3],
-                ["Open to", openTo.length >= 3],
+                [t("common.skills"), p.skillIds.length >= 4],
+                [t("common.interests"), p.interestIds.length >= 3],
+                [t("settings.checklist.goals"), p.goals.length >= 3],
+                [t("settings.checklist.targetCities"), p.targetCityIds.length >= 3],
+                [t("common.openTo"), openTo.length >= 3],
               ].map(([label, done]) => (
                 <li key={label as string} className="flex items-center gap-2">
                   <span
@@ -281,13 +274,13 @@ export function SettingsView({ viewer }: { viewer: PersonView }) {
           <Card className="p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
               <Globe2 className="size-4 text-sky" />
-              Currently
+              {t("settings.currently")}
             </h2>
             <dl className="space-y-2.5 text-[13px]">
-              <Row label="City" value={CITY_BY_ID.get(cityId)?.name ?? ""} />
-              <Row label="Availability" value={AVAILABILITY_LABELS[availability]} />
-              <Row label="Categories" value={p.categories.map((c) => CATEGORY_LABELS[c]).join(", ")} />
-              <Row label="Interface" value={LANGUAGE_LABELS[language]} />
+              <Row label={t("settings.currently.city")} value={cityName(cityId)} />
+              <Row label={t("common.availability")} value={L.availability[availability]} />
+              <Row label={t("common.categories")} value={p.categories.map((c) => L.category[c]).join(", ")} />
+              <Row label={t("settings.currently.interface")} value={LANGUAGE_LABELS[language]} />
             </dl>
           </Card>
         </aside>

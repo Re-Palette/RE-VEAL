@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n/context";
-import { ROLE_LABELS } from "@/lib/labels";
 import type { Role } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +30,7 @@ export function ApplyButton({
   variant?: ButtonProps["variant"];
   className?: string;
 }) {
-  const { t } = useI18n();
+  const { t, L } = useI18n();
   const [open, setOpen] = useState(false);
   const [applied, setApplied] = useState(false);
   const [role, setRole] = useState<Role | undefined>(roles[0]);
@@ -56,16 +55,15 @@ export function ApplyButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Apply to {target}</DialogTitle>
+            <DialogTitle>{t("apply.title", { target })}</DialogTitle>
             <DialogDescription>
-              Your profile, portfolio and match reasons are attached automatically. Say what you want to
-              work on — that is what people actually read.
+              {t("apply.description")}
             </DialogDescription>
           </DialogHeader>
 
           {roles.length > 0 && (
             <div className="mb-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-30">Applying as</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-30">{t("apply.applyingAs")}</p>
               <div className="flex flex-wrap gap-2">
                 {roles.map((r) => (
                   <button
@@ -78,7 +76,7 @@ export function ApplyButton({
                         : "border-ink-15 text-ink-50 hover:border-ink-30",
                     )}
                   >
-                    {ROLE_LABELS[r]}
+                    {L.role[r]}
                   </button>
                 ))}
               </div>
@@ -86,18 +84,18 @@ export function ApplyButton({
           )}
 
           <div className="mb-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-30">Message</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-30">{t("apply.message")}</p>
             <Textarea
               rows={5}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="What do you want to bring to this, and what do you want out of it?"
+              placeholder={t("apply.messagePlaceholder")}
             />
           </div>
 
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="accent"
@@ -107,7 +105,7 @@ export function ApplyButton({
               }}
             >
               <Send />
-              Send application
+              {t("apply.send")}
             </Button>
           </div>
         </DialogContent>

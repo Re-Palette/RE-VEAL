@@ -9,8 +9,8 @@ import { SKILLS } from "@/lib/data/taxonomy";
 import { scoreBrand, scoreCity, scoreEvent, scorePerson, scoreProject } from "@/lib/match/engine";
 import { cityOpportunityCounts } from "@/lib/match/city-stats";
 import type { DataSource } from "@/lib/data-source/types";
-import type { MatchResult, SearchResult } from "@/lib/types";
-import { CATEGORY_LABELS, ROLE_LABELS } from "@/lib/labels";
+import type { LanguageCode, MatchResult, SearchResult } from "@/lib/types";
+import { createI18n } from "@/lib/i18n";
 
 function me() {
   const person = PERSON_BY_ID.get(CURRENT_USER_ID);
@@ -101,24 +101,25 @@ export class MockDataSource implements DataSource {
     return CONNECTIONS;
   }
 
-  async matchesFor(kind: MatchResult["targetKind"], limit = 12) {
+  async matchesFor(kind: MatchResult["targetKind"], limit = 12, language: LanguageCode = "en") {
     const viewer = me();
+    const i18n = createI18n(language);
     let results: MatchResult[];
     switch (kind) {
       case "person":
-        results = PEOPLE.filter((p) => p.id !== viewer.id).map((p) => scorePerson(viewer, p));
+        results = PEOPLE.filter((p) => p.id !== viewer.id).map((p) => scorePerson(viewer, p, i18n));
         break;
       case "brand":
-        results = BRANDS.map((b) => scoreBrand(viewer, b));
+        results = BRANDS.map((b) => scoreBrand(viewer, b, i18n));
         break;
       case "project":
-        results = PROJECTS.map((p) => scoreProject(viewer, p));
+        results = PROJECTS.map((p) => scoreProject(viewer, p, i18n));
         break;
       case "event":
-        results = EVENTS.map((e) => scoreEvent(viewer, e));
+        results = EVENTS.map((e) => scoreEvent(viewer, e, i18n));
         break;
       case "city":
-        results = CITIES.map((c) => scoreCity(viewer, c, cityOpportunityCounts(viewer, c.id)));
+        results = CITIES.map((c) => scoreCity(viewer, c, cityOpportunityCounts(viewer, c.id), i18n));
         break;
       default:
         results = [];
@@ -126,7 +127,8 @@ export class MockDataSource implements DataSource {
     return results.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
-  async search(query: string, limit = 20) {
+  async search(query: string, limit = 20, language: LanguageCode = "en") {
+    const i18n = createI18n(language);
     const q = query.trim().toLowerCase();
     if (q.length === 0) return [];
     const results: SearchResult[] = [];
@@ -141,7 +143,13 @@ export class MockDataSource implements DataSource {
 
     for (const person of PEOPLE) {
       const score = hit(
-        [person.name, person.handle, person.profile.headline, person.profile.bio, ROLE_LABELS[person.profile.role]],
+        [
+          person.name,
+          person.handle,
+          person.profile.headline,
+          person.profile.bio,
+          i18n.L.role[person.profile.role],
+        ],
         70,
       );
       if (score)
@@ -149,11 +157,11 @@ export class MockDataSource implements DataSource {
           id: person.id,
           kind: "person",
           title: person.name,
-          subtitle: `${ROLE_LABELS[person.profile.role]} · ${CITY_BY_ID.get(person.profile.cityId)?.name}`,
+          subtitle: `${i18n.L.role[person.profile.role]} · ${i18n.city(person.profile.cityId)}`,
           href: `/people/${person.id}`,
           seed: person.avatarSeed,
           score,
-          badge: person.verified ? "Verified" : undefined,
+          badge: person.verified ? i18n.t("search.badge.verified") : undefined,
         });
     }
 
@@ -164,7 +172,7 @@ export class MockDataSource implements DataSource {
           id: brand.id,
           kind: "brand",
           title: brand.name,
-          subtitle: `${brand.tagline} · ${CITY_BY_ID.get(brand.cityId)?.name}`,
+          subtitle: `${brand.tagline} · ${i18n.city(brand.cityId)}`,
           href: `/brands/${brand.id}`,
           seed: brand.avatarSeed,
           score,
@@ -178,11 +186,11 @@ export class MockDataSource implements DataSource {
           id: project.id,
           kind: "project",
           title: project.title,
-          subtitle: project.cityIds.map((c) => CITY_BY_ID.get(c)?.name).join(" × "),
+          subtitle: project.cityIds.map((c) => i18n.city(c)).join(" × "),
           href: `/projects/${project.id}`,
           seed: project.coverSeed,
           score,
-          badge: project.status === "recruiting" ? "Recruiting" : undefined,
+          badge: project.status === "recruiting" ? i18n.L.projectStatus.recruiting : undefined,
         });
     }
 
@@ -193,7 +201,7 @@ export class MockDataSource implements DataSource {
           id: event.id,
           kind: "event",
           title: event.title,
-          subtitle: `${CITY_BY_ID.get(event.cityId)?.name} · ${event.startDate}`,
+          subtitle: `${i18n.city(event.cityId)} · ${event.startDate}`,
           href: `/events/${event.id}`,
           seed: event.coverSeed,
           score,
@@ -229,12 +237,12 @@ export class MockDataSource implements DataSource {
     }
 
     for (const city of CITIES) {
-      const score = hit([city.name, city.tagline], 58);
+      const score = hit([i18n.city(city.id), city.name, city.tagline], 58);
       if (score)
         push({
           id: city.id,
           kind: "city",
-          title: city.name,
+          title: i18n.city(city.id),
           subtitle: city.tagline,
           href: `/map?city=${city.id}`,
           seed: city.id,
@@ -243,13 +251,13 @@ export class MockDataSource implements DataSource {
     }
 
     for (const skill of SKILLS) {
-      const score = hit([skill.label, CATEGORY_LABELS[skill.category]], 48);
+      const score = hit([i18n.skill(skill.id), skill.label, i18n.L.category[skill.category]], 48);
       if (score)
         push({
           id: skill.id,
           kind: "skill",
-          title: skill.label,
-          subtitle: `Skill · ${CATEGORY_LABELS[skill.category]}`,
+          title: i18n.skill(skill.id),
+          subtitle: `${i18n.t("search.kind.skill")} · ${i18n.L.category[skill.category]}`,
           href: `/people?skill=${skill.id}`,
           seed: skill.id,
           score,

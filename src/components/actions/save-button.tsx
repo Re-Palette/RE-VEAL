@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { Bookmark } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 export function SaveButton({
-  label = "Save",
-  savedLabel = "Saved",
+  label,
+  savedLabel,
   size = "sm",
   className,
 }: {
@@ -16,6 +17,7 @@ export function SaveButton({
   size?: ButtonProps["size"];
   className?: string;
 }) {
+  const { t } = useI18n();
   const [saved, setSaved] = useState(false);
   return (
     <Button
@@ -26,7 +28,7 @@ export function SaveButton({
       aria-pressed={saved}
     >
       <Bookmark className={cn(saved && "fill-current")} />
-      {saved ? savedLabel : label}
+      {saved ? (savedLabel ?? t("common.saved")) : (label ?? t("common.save"))}
     </Button>
   );
 }

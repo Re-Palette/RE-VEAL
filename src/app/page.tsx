@@ -15,15 +15,16 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { CITY_BY_ID } from "@/lib/data/geo";
 import { cityOpportunityCounts } from "@/lib/match/city-stats";
 import { connectionStatusFor } from "@/lib/data/social";
-import { NOTIFICATION_LABELS } from "@/lib/labels";
 import { PERSON_BY_ID } from "@/lib/data/people";
 import { relativeTime } from "@/lib/utils";
 import type { MapMarker } from "@/components/map/types";
 
 export default async function HomePage() {
+  const i18n = await getI18n();
   const [viewer, people, brands, projects, events, cities, posts, notifications, threads] = await Promise.all([
     db.getCurrentUser(),
     db.listPeople(),
@@ -37,11 +38,11 @@ export default async function HomePage() {
   ]);
 
   const [personMatches, brandMatches, projectMatches, eventMatches, cityMatches] = await Promise.all([
-    db.matchesFor("person", 4),
-    db.matchesFor("brand", 4),
-    db.matchesFor("project", 4),
-    db.matchesFor("event", 4),
-    db.matchesFor("city", 6),
+    db.matchesFor("person", 4, i18n.language),
+    db.matchesFor("brand", 4, i18n.language),
+    db.matchesFor("project", 4, i18n.language),
+    db.matchesFor("event", 4, i18n.language),
+    db.matchesFor("city", 6, i18n.language),
   ]);
 
   const personById = new Map(people.map((p) => [p.id, p]));
@@ -133,15 +134,15 @@ export default async function HomePage() {
       {/* Cities ----------------------------------------------------------- */}
       <section className="mt-14">
         <SectionHeader
-          eyebrow="Global Map"
-          title="Recommended for you"
-          description="Cities where the projects, brands and people already match what you do."
+          eyebrow={i18n.t("home.cities.eyebrow")}
+          title={i18n.t("home.cities.title")}
+          description={i18n.t("home.cities.description")}
           action={
             <Link
               href="/map"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-70 transition-colors hover:text-lavender"
             >
-              Open the map
+              {i18n.t("home.cities.open")}
               <ArrowRight className="size-4" />
             </Link>
           }
@@ -175,7 +176,7 @@ export default async function HomePage() {
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-70 transition-colors hover:text-lavender"
               >
                 <Compass className="size-4" />
-                Discover
+                {i18n.t("nav.discover")}
               </Link>
             }
           />
@@ -191,10 +192,10 @@ export default async function HomePage() {
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
                 <Bell className="size-4 text-lavender" />
-                Activity
+                {i18n.t("home.activity")}
               </h3>
               <Link href="/notifications" className="text-xs font-medium text-ink-30 hover:text-lavender">
-                All
+                {i18n.t("home.activity.all")}
               </Link>
             </div>
             <ul className="space-y-3">
@@ -212,7 +213,7 @@ export default async function HomePage() {
                       )}
                       <span className="min-w-0">
                         <Badge variant="lavender" size="sm" className="mb-1">
-                          {NOTIFICATION_LABELS[notification.kind]}
+                          {i18n.L.notification[notification.kind]}
                         </Badge>
                         <span className="block text-[13px] font-medium leading-snug group-hover:text-lavender">
                           {notification.title}
@@ -232,17 +233,17 @@ export default async function HomePage() {
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
                 <MessageCircle className="size-4 text-sky" />
-                Messages
+                {i18n.t("nav.messages")}
               </h3>
               <Link href="/messages" className="text-xs font-medium text-ink-30 hover:text-lavender">
-                Inbox
+                {i18n.t("home.messages.inbox")}
               </Link>
             </div>
             <ul className="space-y-3">
               {activeThreads.map((thread) => {
                 const other = thread.participantUserIds.find((id) => id !== viewer.id);
                 const person = other ? PERSON_BY_ID.get(other) : undefined;
-                const title = thread.title ?? person?.name ?? "Conversation";
+                const title = thread.title ?? person?.name ?? i18n.t("nav.messages");
                 return (
                   <li key={thread.id}>
                     <Link href="/messages" className="group flex items-center gap-3">
@@ -271,9 +272,11 @@ export default async function HomePage() {
           </Card>
 
           <Card sheen className="p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-30">Your city</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-30">
+              {i18n.t("home.yourCity")}
+            </p>
             <p className="mt-2 font-display text-lg font-semibold tracking-[-0.02em]">
-              {CITY_BY_ID.get(viewer.profile.cityId)?.name}
+              {i18n.city(viewer.profile.cityId)}
             </p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-ink-50">
               {CITY_BY_ID.get(viewer.profile.cityId)?.tagline}
@@ -282,7 +285,7 @@ export default async function HomePage() {
               href={`/map?city=${viewer.profile.cityId}`}
               className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-70 transition-colors hover:text-lavender"
             >
-              See what is happening here
+              {i18n.t("home.yourCity.link")}
               <ArrowRight className="size-4" />
             </Link>
           </Card>

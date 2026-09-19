@@ -6,13 +6,14 @@ import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { CourseCard } from "@/components/cards/content-cards";
 import { ChipGroup, FilterPanel } from "@/components/filters/chip-group";
 import { EmptyState } from "@/components/ui/misc";
-import { LEARN_TRACK_LABELS } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
 import { LEARN_TRACKS, type Course, type LearnTrack } from "@/lib/types";
 
 type Level = Course["level"] | "all";
 type SortKey = "popular" | "rating" | "shortest";
 
 export function LearnCatalogue({ courses }: { courses: Course[] }) {
+  const { t, L } = useI18n();
   const [query, setQuery] = useState("");
   const [track, setTrack] = useState<LearnTrack | "all">("all");
   const [level, setLevel] = useState<Level>("all");
@@ -42,15 +43,15 @@ export function LearnCatalogue({ courses }: { courses: Course[] }) {
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Grow"
-        title="Learn"
-        description="The parts of the beauty industry nobody teaches properly: margins, claims, shade development, retail readiness, and the craft underneath all of it."
+        eyebrow={t("nav.grow")}
+        title={t("learn.title")}
+        description={t("learn.description")}
       />
 
       <FilterPanel
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search courses…"
+        placeholder={t("learn.searchPlaceholder")}
         resultCount={filtered.length}
         activeCount={(track !== "all" ? 1 : 0) + (level !== "all" ? 1 : 0) + (query ? 1 : 0)}
         onClear={() => {
@@ -60,36 +61,36 @@ export function LearnCatalogue({ courses }: { courses: Course[] }) {
         }}
       >
         <ChipGroup
-          label="Track"
+          label={t("learn.filter.track")}
           value={track}
           onChange={setTrack}
           options={[
-            { value: "all" as const, label: "All tracks" },
-            ...LEARN_TRACKS.map((t) => ({ value: t, label: LEARN_TRACK_LABELS[t] })),
+            { value: "all" as const, label: t("learn.filter.allTracks") },
+            ...LEARN_TRACKS.map((track) => ({ value: track, label: L.learnTrack[track] })),
           ]}
         />
         <div className="grid gap-4 md:grid-cols-2">
           <ChipGroup
-            label="Level"
+            label={t("learn.filter.level")}
             tone="lavender"
             value={level}
             onChange={setLevel}
             options={[
-              { value: "all", label: "Any level" },
-              { value: "beginner", label: "Beginner" },
-              { value: "intermediate", label: "Intermediate" },
-              { value: "advanced", label: "Advanced" },
+              { value: "all", label: t("learn.filter.anyLevel") },
+              { value: "beginner", label: L.courseLevel.beginner },
+              { value: "intermediate", label: L.courseLevel.intermediate },
+              { value: "advanced", label: L.courseLevel.advanced },
             ]}
           />
           <ChipGroup
-            label="Sort"
+            label={t("common.sort")}
             tone="sky"
             value={sort}
             onChange={setSort}
             options={[
-              { value: "popular", label: "Most enrolled" },
-              { value: "rating", label: "Highest rated" },
-              { value: "shortest", label: "Shortest" },
+              { value: "popular", label: t("learn.sort.popular") },
+              { value: "rating", label: t("learn.sort.rating") },
+              { value: "shortest", label: t("learn.sort.shortest") },
             ]}
           />
         </div>
@@ -98,8 +99,8 @@ export function LearnCatalogue({ courses }: { courses: Course[] }) {
       {filtered.length === 0 ? (
         <EmptyState
           icon={GraduationCap}
-          title="No courses match"
-          description="Try another track, or clear the level filter."
+          title={t("learn.empty.title")}
+          description={t("learn.empty.description")}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

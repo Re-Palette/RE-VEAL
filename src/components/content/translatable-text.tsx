@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Languages } from "lucide-react";
 import { useI18n } from "@/lib/i18n/context";
-import { LANGUAGE_LABELS } from "@/lib/labels";
 import type { LanguageCode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +23,7 @@ export function TranslatableText({
   from: LanguageCode;
   className?: string;
 }) {
-  const { language } = useI18n();
+  const { language, t, languageName } = useI18n();
   const [showOriginal, setShowOriginal] = useState(false);
   const needsTranslation = from !== language;
 
@@ -42,8 +41,8 @@ export function TranslatableText({
         >
           <Languages className="size-3" />
           {showOriginal
-            ? `Original · ${LANGUAGE_LABELS[from]}`
-            : `Translated from ${LANGUAGE_LABELS[from]}`}
+            ? t("content.original", { language: languageName(from) })
+            : t("content.translatedFrom", { language: languageName(from) })}
         </button>
       )}
     </div>

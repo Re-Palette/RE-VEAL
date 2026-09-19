@@ -7,16 +7,9 @@ import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { PersonCard } from "@/components/cards/person-card";
 import { ChipGroup, FilterPanel, MultiChipGroup } from "@/components/filters/chip-group";
 import { EmptyState } from "@/components/ui/misc";
+import { useI18n } from "@/lib/i18n/context";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
 import { CITY_BY_ID } from "@/lib/data/geo";
-import { SKILL_BY_ID } from "@/lib/data/taxonomy";
-import {
-  AVAILABILITY_LABELS,
-  CATEGORY_LABELS,
-  LANGUAGE_LABELS,
-  OPEN_TO_LABELS,
-  REGION_LABELS,
-  ROLE_LABELS,
-} from "@/lib/labels";
 import {
   AVAILABILITY,
   BEAUTY_CATEGORIES,
@@ -36,13 +29,6 @@ import {
 
 type SortKey = "match" | "followers" | "newest" | "name";
 
-const SORTS: { value: SortKey; label: string }[] = [
-  { value: "match", label: "Best match" },
-  { value: "followers", label: "Most followed" },
-  { value: "newest", label: "Newest" },
-  { value: "name", label: "A–Z" },
-];
-
 export function PeopleDirectory({
   people,
   matches,
@@ -53,6 +39,7 @@ export function PeopleDirectory({
   connections: Record<string, ConnectionStatus>;
 }) {
   const params = useSearchParams();
+  const { t, L, skill: skillName, city: cityName } = useI18n();
 
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<Role | "all">("all");
@@ -92,9 +79,9 @@ export function PeopleDirectory({
           person.handle,
           p.headline,
           p.bio,
-          ROLE_LABELS[p.role],
-          CITY_BY_ID.get(p.cityId)?.name ?? "",
-          ...p.skillIds.map((id) => SKILL_BY_ID.get(id)?.label ?? ""),
+          L.role[p.role],
+          cityName(p.cityId),
+          ...p.skillIds.map((id) => skillName(id)),
         ]
           .join(" ")
           .toLowerCase();
@@ -136,29 +123,33 @@ export function PeopleDirectory({
     setOpenTo([]);
   };
 
-  const contextLabel = [
-    cityFilter ? CITY_BY_ID.get(cityFilter)?.name : undefined,
-    skillFilter ? SKILL_BY_ID.get(skillFilter)?.label : undefined,
-  ]
+  const contextLabel = [cityFilter ? cityName(cityFilter) : undefined, skillFilter ? skillName(skillFilter) : undefined]
     .filter(Boolean)
     .join(" · ");
+
+  const SORTS: { value: SortKey; label: string }[] = [
+    { value: "match", label: t("people.sort.match") },
+    { value: "followers", label: t("people.sort.followers") },
+    { value: "newest", label: t("people.sort.newest") },
+    { value: "name", label: t("people.sort.name") },
+  ];
 
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Connect"
-        title="People"
+        eyebrow={t("nav.connect")}
+        title={t("people.title")}
         description={
           contextLabel
-            ? `Filtered to ${contextLabel}. Every profile is a working portfolio, not a follower count.`
-            : "Beauty students, creators, artists and professionals across 34 cities. Every profile is a working portfolio, not a follower count."
+            ? t("people.descriptionFiltered", { context: contextLabel })
+            : t("people.description")
         }
       />
 
       <FilterPanel
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search by name, skill, city or what they want to build…"
+        placeholder={t("people.searchPlaceholder")}
         resultCount={filtered.length}
         activeCount={activeCount}
         onClear={clear}
@@ -171,62 +162,65 @@ export function PeopleDirectory({
         advanced={
           <>
             <ChipGroup
-              label="Location"
+              label={t("common.location")}
               tone="sky"
               value={region}
               onChange={setRegion}
               options={[
-                { value: "all", label: "Worldwide" },
-                ...REGIONS.map((r) => ({ value: r as string, label: REGION_LABELS[r] })),
+                { value: "all", label: t("common.worldwide") },
+                ...REGIONS.map((r) => ({ value: r as string, label: L.region[r] })),
               ]}
             />
             <ChipGroup
-              label="Availability"
+              label={t("common.availability")}
               tone="lavender"
               value={availability}
               onChange={setAvailability}
               options={[
-                { value: "all" as const, label: "Any" },
-                ...AVAILABILITY.map((a) => ({ value: a, label: AVAILABILITY_LABELS[a] })),
+                { value: "all" as const, label: t("common.any") },
+                ...AVAILABILITY.map((a) => ({ value: a, label: L.availability[a] })),
               ]}
             />
             <MultiChipGroup
-              label="Language"
+              label={t("common.languages")}
               tone="mint"
               values={languages}
               onToggle={(value) => toggle(languages, value, setLanguages)}
               options={LANGUAGES.map((l) => ({ value: l, label: LANGUAGE_LABELS[l] }))}
             />
             <MultiChipGroup
-              label="Open to"
+              label={t("common.openTo")}
               tone="sky"
               values={openTo}
               onToggle={(value) => toggle(openTo, value, setOpenTo)}
-              options={OPEN_TO.map((o) => ({ value: o, label: OPEN_TO_LABELS[o] }))}
+              options={OPEN_TO.map((o) => ({ value: o, label: L.openTo[o] }))}
             />
           </>
         }
       >
         <ChipGroup
-          label="Role"
+          label={t("common.role")}
           value={role}
           onChange={setRole}
-          options={[{ value: "all" as const, label: "All roles" }, ...ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))]}
+          options={[
+            { value: "all" as const, label: t("people.allRoles") },
+            ...ROLES.map((r) => ({ value: r, label: L.role[r] })),
+          ]}
         />
         <MultiChipGroup
-          label="Beauty category"
+          label={t("common.beautyCategory")}
           values={categories}
           onToggle={(value) => toggle(categories, value, setCategories)}
-          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: L.category[c] }))}
         />
-        <ChipGroup label="Sort" value={sort} onChange={setSort} options={SORTS} />
+        <ChipGroup label={t("common.sort")} value={sort} onChange={setSort} options={SORTS} />
       </FilterPanel>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="Nobody matches those filters yet"
-          description="RE:VEAL is global but not infinite. Widen the category, region or availability and try again."
+          title={t("people.empty.title")}
+          description={t("people.empty.description")}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

@@ -7,8 +7,8 @@ import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { BrandCard } from "@/components/cards/brand-card";
 import { ChipGroup, FilterPanel, MultiChipGroup } from "@/components/filters/chip-group";
 import { EmptyState } from "@/components/ui/misc";
+import { useI18n } from "@/lib/i18n/context";
 import { CITY_BY_ID } from "@/lib/data/geo";
-import { BRAND_TYPE_LABELS, CATEGORY_LABELS, REGION_LABELS, ROLE_LABELS } from "@/lib/labels";
 import {
   BEAUTY_CATEGORIES,
   BRAND_TYPES,
@@ -23,15 +23,9 @@ import {
 
 type SortKey = "match" | "openings" | "followers" | "newest";
 
-const SORTS: { value: SortKey; label: string }[] = [
-  { value: "match", label: "Best match" },
-  { value: "openings", label: "Most open roles" },
-  { value: "followers", label: "Most followed" },
-  { value: "newest", label: "Newest" },
-];
-
 export function BrandsDirectory({ brands, matches }: { brands: Brand[]; matches: MatchResult[] }) {
   const params = useSearchParams();
+  const { t, L } = useI18n();
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState<BrandType | "all">("all");
@@ -43,6 +37,13 @@ export function BrandsDirectory({ brands, matches }: { brands: Brand[]; matches:
   });
   const [onlyOpen, setOnlyOpen] = useState(params.get("looking") !== null);
   const [sort, setSort] = useState<SortKey>("match");
+
+  const SORTS: { value: SortKey; label: string }[] = [
+    { value: "match", label: t("people.sort.match") },
+    { value: "openings", label: t("brands.sort.openings") },
+    { value: "followers", label: t("people.sort.followers") },
+    { value: "newest", label: t("people.sort.newest") },
+  ];
 
   const scoreById = useMemo(() => new Map(matches.map((m) => [m.targetId, m])), [matches]);
 
@@ -88,15 +89,15 @@ export function BrandsDirectory({ brands, matches }: { brands: Brand[]; matches:
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Connect"
-        title="Brands"
-        description="New labels, student brands, D2C and established companies — and what each of them is looking for right now."
+        eyebrow={t("nav.connect")}
+        title={t("brands.title")}
+        description={t("brands.description")}
       />
 
       <FilterPanel
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search brands by name, story or market…"
+        placeholder={t("brands.searchPlaceholder")}
         resultCount={filtered.length}
         activeCount={activeCount}
         onClear={() => {
@@ -111,17 +112,17 @@ export function BrandsDirectory({ brands, matches }: { brands: Brand[]; matches:
         advanced={
           <>
             <ChipGroup
-              label="Location"
+              label={t("common.location")}
               tone="sky"
               value={region}
               onChange={setRegion}
               options={[
-                { value: "all", label: "Worldwide" },
-                ...REGIONS.map((r) => ({ value: r as string, label: REGION_LABELS[r] })),
+                { value: "all", label: t("common.worldwide") },
+                ...REGIONS.map((r) => ({ value: r as string, label: L.region[r] })),
               ]}
             />
             <MultiChipGroup
-              label="Looking for"
+              label={t("brands.filter.lookingFor")}
               tone="mint"
               values={lookingFor}
               onToggle={(value) =>
@@ -129,48 +130,48 @@ export function BrandsDirectory({ brands, matches }: { brands: Brand[]; matches:
                   current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
                 )
               }
-              options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+              options={ROLES.map((r) => ({ value: r, label: L.role[r] }))}
             />
             <ChipGroup
-              label="Opportunities"
+              label={t("brands.filter.opportunities")}
               tone="lavender"
               value={onlyOpen ? "open" : "any"}
               onChange={(value) => setOnlyOpen(value === "open")}
               options={[
-                { value: "any", label: "All brands" },
-                { value: "open", label: "Creators wanted" },
+                { value: "any", label: t("brands.filter.allBrands") },
+                { value: "open", label: t("brands.filter.creatorsWanted") },
               ]}
             />
           </>
         }
       >
         <ChipGroup
-          label="Brand type"
+          label={t("brands.filter.type")}
           value={type}
           onChange={setType}
           options={[
-            { value: "all" as const, label: "All brands" },
-            ...BRAND_TYPES.map((t) => ({ value: t, label: BRAND_TYPE_LABELS[t] })),
+            { value: "all" as const, label: t("brands.filter.allBrands") },
+            ...BRAND_TYPES.map((type) => ({ value: type, label: L.brandType[type] })),
           ]}
         />
         <MultiChipGroup
-          label="Beauty category"
+          label={t("common.beautyCategory")}
           values={categories}
           onToggle={(value) =>
             setCategories((current) =>
               current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
             )
           }
-          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+          options={BEAUTY_CATEGORIES.map((c) => ({ value: c, label: L.category[c] }))}
         />
-        <ChipGroup label="Sort" value={sort} onChange={setSort} options={SORTS} />
+        <ChipGroup label={t("common.sort")} value={sort} onChange={setSort} options={SORTS} />
       </FilterPanel>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No brands match those filters"
-          description="Try a broader category, another region, or turn off the “Creators wanted” filter."
+          title={t("brands.empty.title")}
+          description={t("brands.empty.description")}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

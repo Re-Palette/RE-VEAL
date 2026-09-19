@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 export interface ChipOption<T extends string> {
@@ -127,6 +128,7 @@ export function FilterPanel({
   advanced?: React.ReactNode;
   advancedCount?: number;
 }) {
+  const { t } = useI18n();
   const [showAdvanced, setShowAdvanced] = useState(false);
   return (
     <div className="mb-6 space-y-4 rounded-panel border border-ink-08 bg-white/70 p-4 backdrop-blur sm:p-5">
@@ -141,16 +143,14 @@ export function FilterPanel({
           />
         </div>
         <span className="flex items-center gap-3 text-xs text-ink-50">
-          <span>
-            <span className="font-semibold text-ink">{resultCount}</span> results
-          </span>
+          <span className="font-semibold text-ink">{t("common.results", { count: resultCount })}</span>
           {activeCount > 0 && (
             <button
               onClick={onClear}
               className="inline-flex items-center gap-1 font-medium text-ink-30 transition-colors hover:text-lavender"
             >
               <X className="size-3.5" />
-              Clear {activeCount}
+              {t("common.clearCount", { count: activeCount })}
             </button>
           )}
         </span>
@@ -164,7 +164,7 @@ export function FilterPanel({
             className="inline-flex items-center gap-2 rounded-full border border-ink-08 bg-white px-3.5 py-1.5 text-[13px] font-medium text-ink-50 transition-colors hover:border-lavender/40 hover:text-ink"
           >
             <SlidersHorizontal className="size-3.5" />
-            More filters
+            {t("common.moreFilters")}
             {advancedCount > 0 && (
               <span className="rounded-full bg-lavender-soft px-1.5 text-[11px] font-semibold text-[#4B3BA0]">
                 {advancedCount}

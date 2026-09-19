@@ -1,9 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/data-source";
+import { getI18n } from "@/lib/i18n/server";
 import { cityOpportunityCounts, cityTotals } from "@/lib/match/city-stats";
-import { BRAND_TYPE_LABELS, EVENT_TYPE_LABELS, PROJECT_TYPE_LABELS, ROLE_LABELS } from "@/lib/labels";
-import { CITY_BY_ID } from "@/lib/data/geo";
 import { scoreOf, type MapEntity } from "@/components/map/map-entities";
 import { MapExplorer } from "@/app/map/map-explorer";
 
@@ -13,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MapPage() {
+  const i18n = await getI18n();
   const [viewer, people, brands, projects, events, cities] = await Promise.all([
     db.getCurrentUser(),
     db.listPeople(),
@@ -23,11 +23,11 @@ export default async function MapPage() {
   ]);
 
   const [personMatches, brandMatches, projectMatches, eventMatches, cityMatches] = await Promise.all([
-    db.matchesFor("person", 200),
-    db.matchesFor("brand", 200),
-    db.matchesFor("project", 200),
-    db.matchesFor("event", 200),
-    db.matchesFor("city", 200),
+    db.matchesFor("person", 200, i18n.language),
+    db.matchesFor("brand", 200, i18n.language),
+    db.matchesFor("project", 200, i18n.language),
+    db.matchesFor("event", 200, i18n.language),
+    db.matchesFor("city", 200, i18n.language),
   ]);
 
   const entities: MapEntity[] = [
@@ -39,7 +39,7 @@ export default async function MapPage() {
           id: person.id,
           kind: "person",
           name: person.name,
-          subtitle: ROLE_LABELS[person.profile.role],
+          subtitle: i18n.L.role[person.profile.role],
           detail: person.profile.headline,
           href: `/people/${person.id}`,
           seed: person.avatarSeed,
@@ -57,7 +57,7 @@ export default async function MapPage() {
       id: brand.id,
       kind: "brand",
       name: brand.name,
-      subtitle: BRAND_TYPE_LABELS[brand.type],
+      subtitle: i18n.L.brandType[brand.type],
       detail: brand.tagline,
       href: `/brands/${brand.id}`,
       seed: brand.avatarSeed,
@@ -73,7 +73,7 @@ export default async function MapPage() {
       id: project.id,
       kind: "project",
       name: project.title,
-      subtitle: PROJECT_TYPE_LABELS[project.type],
+      subtitle: i18n.L.projectType[project.type],
       detail: project.summary,
       href: `/projects/${project.id}`,
       seed: project.coverSeed,
@@ -89,7 +89,7 @@ export default async function MapPage() {
       id: event.id,
       kind: "event",
       name: event.title,
-      subtitle: EVENT_TYPE_LABELS[event.type],
+      subtitle: i18n.L.eventType[event.type],
       detail: event.summary,
       href: `/events/${event.id}`,
       seed: event.coverSeed,
@@ -116,8 +116,8 @@ export default async function MapPage() {
       <MapExplorer
         cities={cityInfo}
         entities={entities}
-        viewerCityName={CITY_BY_ID.get(viewer.profile.cityId)?.name ?? ""}
-        viewerRole={ROLE_LABELS[viewer.profile.role]}
+        viewerCityName={i18n.city(viewer.profile.cityId)}
+        viewerRole={i18n.L.role[viewer.profile.role]}
         viewerCategories={viewer.profile.categories}
       />
     </Suspense>

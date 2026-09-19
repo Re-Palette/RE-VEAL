@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TranslatableText } from "@/components/content/translatable-text";
 import { ChipGroup } from "@/components/filters/chip-group";
-import { LANGUAGE_SHORT } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n/context";
+import { LANGUAGE_SHORT } from "@/lib/i18n";
 import type { Message, MessageThread, PersonView, ThreadKind } from "@/lib/types";
 import { cn, relativeTime } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ export function MessagesView({
   messages: Record<string, Message[]>;
   people: PersonView[];
 }) {
+  const { t, L } = useI18n();
   const [activeId, setActiveId] = useState(threads[0]?.id);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ThreadKind | "all">("all");
@@ -49,7 +51,7 @@ export function MessagesView({
   const titleFor = (thread: MessageThread) => {
     if (thread.title) return thread.title;
     const other = thread.participantUserIds.find((id) => id !== viewer.id);
-    return (other && personById.get(other)?.name) ?? "Conversation";
+    return (other && personById.get(other)?.name) ?? t("messages.title");
   };
 
   const seedFor = (thread: MessageThread) => {
@@ -99,13 +101,13 @@ export function MessagesView({
           )}
         >
           <div className="space-y-3 border-b border-ink-08 p-4">
-            <h1 className="font-display text-lg font-semibold tracking-[-0.02em]">Messages</h1>
+            <h1 className="font-display text-lg font-semibold tracking-[-0.02em]">{t("messages.title")}</h1>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-30" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search conversations…"
+                placeholder={t("messages.searchPlaceholder")}
                 className="h-9 w-full rounded-full border border-ink-15 bg-white pl-10 pr-4 text-sm placeholder:text-ink-30 focus:border-lavender focus:outline-none focus:ring-4 focus:ring-lavender/12"
               />
             </div>
@@ -113,11 +115,11 @@ export function MessagesView({
               value={kind}
               onChange={setKind}
               options={[
-                { value: "all", label: "All" },
-                { value: "direct", label: "Direct" },
-                { value: "project", label: "Projects" },
-                { value: "brand", label: "Brands" },
-                { value: "group", label: "Groups" },
+                { value: "all", label: t("messages.filter.all") },
+                { value: "direct", label: L.threadKind.direct },
+                { value: "project", label: L.threadKind.project },
+                { value: "brand", label: L.threadKind.brand },
+                { value: "group", label: L.threadKind.group },
               ]}
             />
           </div>
@@ -155,7 +157,7 @@ export function MessagesView({
                       </span>
                       <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-30">
                         <Icon className="size-3" />
-                        <span className="capitalize">{thread.kind}</span>
+                        <span>{L.threadKind[thread.kind]}</span>
                         <span>· {relativeTime(thread.updatedAt)}</span>
                       </span>
                       {last && (
@@ -179,7 +181,7 @@ export function MessagesView({
                 <button
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl p-1.5 text-ink-50 transition-colors hover:bg-ink-08 lg:hidden"
-                  aria-label="Back to conversations"
+                  aria-label={t("messages.back")}
                 >
                   <ArrowLeft className="size-5" />
                 </button>
@@ -192,17 +194,20 @@ export function MessagesView({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{titleFor(active)}</p>
                   <p className="truncate text-xs text-ink-50">
-                    {active.participantUserIds.length} participants · {active.kind}
+                    {t("messages.participants", {
+                      count: active.participantUserIds.length,
+                      kind: L.threadKind[active.kind],
+                    })}
                   </p>
                 </div>
                 {active.projectId && (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/projects/${active.projectId}`}>Open project</Link>
+                    <Link href={`/projects/${active.projectId}`}>{t("messages.openProject")}</Link>
                   </Button>
                 )}
                 {active.brandId && (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/brands/${active.brandId}`}>Open brand</Link>
+                    <Link href={`/brands/${active.brandId}`}>{t("messages.openBrand")}</Link>
                   </Button>
                 )}
               </div>
@@ -219,7 +224,7 @@ export function MessagesView({
                       {sender && <Avatar seed={sender.avatarSeed} name={sender.name} size="sm" />}
                       <div className={cn("min-w-0", mine && "text-right")}>
                         <p className="mb-1 flex items-center gap-2 text-[11px] text-ink-30">
-                          <span className={cn(mine && "order-2")}>{sender?.name ?? "Unknown"}</span>
+                          <span className={cn(mine && "order-2")}>{sender?.name ?? ""}</span>
                           <Badge size="sm" variant="outline" className={cn(mine && "order-1")}>
                             {LANGUAGE_SHORT[message.language]}
                           </Badge>
@@ -254,17 +259,17 @@ export function MessagesView({
                       send();
                     }
                   }}
-                  placeholder="Write in your own language — it is translated for them."
+                  placeholder={t("messages.composer")}
                   className="max-h-32 min-h-10 flex-1 resize-none rounded-2xl border border-ink-15 bg-white px-4 py-2.5 text-sm placeholder:text-ink-30 focus:border-lavender focus:outline-none focus:ring-4 focus:ring-lavender/12"
                 />
-                <Button variant="accent" size="icon" onClick={send} aria-label="Send message">
+                <Button variant="accent" size="icon" onClick={send} aria-label={t("messages.send")}>
                   <Send />
                 </Button>
               </div>
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-ink-50">
-              Select a conversation.
+              {t("messages.select")}
             </div>
           )}
         </div>

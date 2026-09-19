@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, Briefcase, Building2, CalendarDays, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MatchBadge } from "@/components/match/match-score";
+import { useI18n } from "@/lib/i18n/context";
 import { COUNTRY_BY_ID } from "@/lib/data/geo";
 import type { City, MatchResult } from "@/lib/types";
 import { gradientStyle } from "@/lib/visual";
@@ -15,6 +18,7 @@ export function CityCard({
   match?: MatchResult;
   counts: { projects: number; brands: number; events: number; people: number };
 }) {
+  const { t, city: cityName } = useI18n();
   const country = COUNTRY_BY_ID.get(city.countryId);
 
   return (
@@ -28,7 +32,7 @@ export function CityCard({
         <div className="px-5 pb-5 pt-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-display text-base font-semibold tracking-[-0.015em]">
-              {city.name} <span className="ml-0.5">{country?.flag}</span>
+              {cityName(city.id)} <span className="ml-0.5">{country?.flag}</span>
             </h3>
             <ArrowUpRight className="size-4 shrink-0 text-ink-30" />
           </div>
@@ -36,10 +40,10 @@ export function CityCard({
 
           <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-ink-08 pt-3.5">
             {[
-              { icon: Briefcase, value: counts.projects, label: "Projects" },
-              { icon: Building2, value: counts.brands, label: "Brands" },
-              { icon: CalendarDays, value: counts.events, label: "Events" },
-              { icon: Users, value: counts.people, label: "People" },
+              { icon: Briefcase, value: counts.projects, label: t("common.projects") },
+              { icon: Building2, value: counts.brands, label: t("common.brands") },
+              { icon: CalendarDays, value: counts.events, label: t("common.events") },
+              { icon: Users, value: counts.people, label: t("common.people") },
             ].map((stat) => (
               <div key={stat.label}>
                 <dt className="sr-only">{stat.label}</dt>

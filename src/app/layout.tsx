@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { I18nProvider } from "@/lib/i18n/context";
+import { getLanguage } from "@/lib/i18n/server";
 import { db } from "@/lib/data-source";
-import { CITY_BY_ID } from "@/lib/data/geo";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +29,8 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [viewer, threads, notifications] = await Promise.all([
+  const [language, viewer, threads, notifications] = await Promise.all([
+    getLanguage(),
     db.getCurrentUser(),
     db.listThreads(),
     db.listNotifications(),
@@ -41,13 +42,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={language} className={inter.variable}>
       <body className="font-sans antialiased">
-        <I18nProvider>
+        <I18nProvider initialLanguage={language}>
           <AppShell
             viewer={viewer}
             counts={counts}
-            cityName={CITY_BY_ID.get(viewer.profile.cityId)?.name ?? ""}
+            cityId={viewer.profile.cityId}
           >
             {children}
           </AppShell>

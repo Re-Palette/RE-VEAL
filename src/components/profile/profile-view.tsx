@@ -13,15 +13,8 @@ import { ProjectCard } from "@/components/cards/project-card";
 import { EventCard } from "@/components/cards/event-card";
 import { PersonRow } from "@/components/cards/person-card";
 import { CITY_BY_ID, COUNTRY_BY_ID } from "@/lib/data/geo";
-import { interestLabel, skillLabel } from "@/lib/data/taxonomy";
-import {
-  AVAILABILITY_LABELS,
-  CATEGORY_LABELS,
-  EXPERIENCE_LABELS,
-  LANGUAGE_LABELS,
-  OPEN_TO_LABELS,
-  ROLE_LABELS,
-} from "@/lib/labels";
+import { getI18n } from "@/lib/i18n/server";
+import { LANGUAGE_LABELS } from "@/lib/i18n";
 import type {
   BeautyEvent,
   Brand,
@@ -34,7 +27,7 @@ import type {
 import { formatCount } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 
-export function ProfileView({
+export async function ProfileView({
   person,
   match,
   connection,
@@ -55,9 +48,10 @@ export function ProfileView({
   collaborators: PersonView[];
   isSelf?: boolean;
 }) {
+  const { t, L, skill, interest, city: cityName, country: countryName } = await getI18n();
   const p = person.profile;
-  const city = CITY_BY_ID.get(p.cityId);
-  const country = COUNTRY_BY_ID.get(p.countryId);
+  const countryId = CITY_BY_ID.get(p.cityId)?.countryId ?? p.countryId;
+  const country = COUNTRY_BY_ID.get(countryId);
 
   return (
     <PageContainer>
@@ -77,7 +71,7 @@ export function ProfileView({
                 </h1>
                 {person.verified && <BadgeCheck className="size-5 text-sky" />}
                 <Badge variant="mint" size="sm">
-                  {AVAILABILITY_LABELS[p.availability]}
+                  {L.availability[p.availability]}
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-ink-50">@{person.handle}</p>
@@ -86,11 +80,15 @@ export function ProfileView({
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="size-4 text-ink-30" />
-                  {city?.name}, {country?.name} {country?.flag}
+                  {cityName(p.cityId)}, {countryName(countryId)} {country?.flag}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Globe2 className="size-4 text-ink-30" />
-                  {ROLE_LABELS[p.role]} · {EXPERIENCE_LABELS[p.experience]} · {p.yearsActive}y
+                  {t("profile.experienceLine", {
+                    role: L.role[p.role],
+                    experience: L.experience[p.experience],
+                    years: p.yearsActive,
+                  })}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Languages className="size-4 text-ink-30" />
@@ -103,7 +101,7 @@ export function ProfileView({
               {match && !isSelf && <MatchRing score={match.score} />}
               {isSelf ? (
                 <Button asChild variant="outline">
-                  <Link href="/settings">Edit profile</Link>
+                  <Link href="/settings">{t("profile.editProfile")}</Link>
                 </Button>
               ) : (
                 <>
@@ -111,7 +109,7 @@ export function ProfileView({
                   <Button asChild variant="outline">
                     <Link href="/messages">
                       <MessageCircle />
-                      Message
+                      {t("common.message")}
                     </Link>
                   </Button>
                 </>
@@ -121,11 +119,11 @@ export function ProfileView({
 
           <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 border-t border-ink-08 pt-5">
             {[
-              ["Followers", formatCount(p.followers)],
-              ["Following", formatCount(p.following)],
-              ["Connections", formatCount(p.connections)],
-              ["Projects", String(projects.length)],
-              ["Portfolio", String(portfolio.length)],
+              [t("profile.stats.followers"), formatCount(p.followers)],
+              [t("profile.stats.following"), formatCount(p.following)],
+              [t("profile.stats.connections"), formatCount(p.connections)],
+              [t("profile.stats.projects"), String(projects.length)],
+              [t("profile.stats.portfolio"), String(portfolio.length)],
             ].map(([label, value]) => (
               <div key={label}>
                 <dd className="font-display text-lg font-semibold tracking-[-0.02em]">{value}</dd>
@@ -142,7 +140,7 @@ export function ProfileView({
           {match && !isSelf && (
             <Card sheen className="p-5">
               <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
-                Why this matches you
+                {t("common.whyMatch")}
               </h2>
               <p className="mb-4 text-[13px] leading-relaxed text-ink-70">{match.narrative}</p>
               <MatchReasons reasons={match.reasons} limit={5} variant="list" />
@@ -150,25 +148,27 @@ export function ProfileView({
           )}
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">About</h2>
+            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+              {t("profile.about")}
+            </h2>
             <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink-70">{p.bio}</p>
           </Card>
 
           <Card className="p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
               <Target className="size-4 text-lavender" />
-              Open to
+              {t("common.openTo")}
             </h2>
             <div className="flex flex-wrap gap-1.5">
               {p.openTo.map((o) => (
                 <Badge key={o} variant="lavender" size="md">
-                  {OPEN_TO_LABELS[o]}
+                  {L.openTo[o]}
                 </Badge>
               ))}
             </div>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Goals
+              {t("profile.goals")}
             </h3>
             <ul className="space-y-2">
               {p.goals.map((goal) => (
@@ -180,13 +180,13 @@ export function ProfileView({
             </ul>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Wants to work in
+              {t("profile.wantsToWork")}
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {p.targetCityIds.map((id) => (
                 <Link key={id} href={`/map?city=${id}`}>
                   <Badge variant="sky" size="sm">
-                    {CITY_BY_ID.get(id)?.name}
+                    {cityName(id)}
                   </Badge>
                 </Link>
               ))}
@@ -194,35 +194,37 @@ export function ProfileView({
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">Skills</h2>
+            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
+              {t("common.skills")}
+            </h2>
             <div className="flex flex-wrap gap-1.5">
               {p.skillIds.map((id) => (
                 <Link key={id} href={`/people?skill=${id}`}>
                   <Badge variant="default" size="md">
-                    {skillLabel(id)}
+                    {skill(id)}
                   </Badge>
                 </Link>
               ))}
             </div>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Categories
+              {t("common.categories")}
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {p.categories.map((c) => (
                 <Badge key={c} variant="blush" size="sm">
-                  {CATEGORY_LABELS[c]}
+                  {L.category[c]}
                 </Badge>
               ))}
             </div>
 
             <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-30">
-              Interests
+              {t("common.interests")}
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {p.interestIds.map((id) => (
                 <Badge key={id} variant="mint" size="sm">
-                  {interestLabel(id)}
+                  {interest(id)}
                 </Badge>
               ))}
             </div>
@@ -232,7 +234,7 @@ export function ProfileView({
             <Card className="p-5">
               <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em]">
                 <Award className="size-4 text-gold" />
-                Achievements
+                {t("profile.achievements")}
               </h2>
               <ul className="space-y-3">
                 {p.achievements.map((achievement) => (
@@ -254,7 +256,7 @@ export function ProfileView({
             panes={[
               {
                 value: "portfolio",
-                label: "Portfolio",
+                label: t("nav.portfolio"),
                 count: portfolio.length,
                 node:
                   portfolio.length > 0 ? (
@@ -264,12 +266,12 @@ export function ProfileView({
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="No portfolio pieces published yet." />
+                    <EmptyNote text={t("profile.empty.portfolio")} />
                   ),
               },
               {
                 value: "projects",
-                label: "Projects",
+                label: t("common.projects"),
                 count: projects.length,
                 node:
                   projects.length > 0 ? (
@@ -279,12 +281,12 @@ export function ProfileView({
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="Not part of any project on RE:VEAL yet." />
+                    <EmptyNote text={t("profile.empty.projects")} />
                   ),
               },
               {
                 value: "collaborations",
-                label: "Collaborations",
+                label: t("profile.tab.collaborations"),
                 count: collaborators.length,
                 node:
                   collaborators.length > 0 ? (
@@ -294,12 +296,12 @@ export function ProfileView({
                       ))}
                     </Card>
                   ) : (
-                    <EmptyNote text="No shared projects yet." />
+                    <EmptyNote text={t("profile.empty.collaborations")} />
                   ),
               },
               {
                 value: "brands",
-                label: "Brands",
+                label: t("common.brands"),
                 count: brands.length,
                 node:
                   brands.length > 0 ? (
@@ -319,12 +321,12 @@ export function ProfileView({
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="Not affiliated with a brand on RE:VEAL." />
+                    <EmptyNote text={t("profile.empty.brands")} />
                   ),
               },
               {
                 value: "events",
-                label: "Events",
+                label: t("common.events"),
                 count: events.length,
                 node:
                   events.length > 0 ? (
@@ -334,7 +336,7 @@ export function ProfileView({
                       ))}
                     </div>
                   ) : (
-                    <EmptyNote text="Not speaking at any upcoming event." />
+                    <EmptyNote text={t("profile.empty.events")} />
                   ),
               },
             ]}
