@@ -26,7 +26,7 @@ export function HomeHero({
         }}
       />
 
-      <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-10 lg:p-10 xl:p-12">
+      <div className="relative grid grid-cols-[minmax(0,1fr)] gap-8 p-6 sm:p-8 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-10 lg:p-10 xl:p-12">
         <div className="min-w-0">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-50 backdrop-blur">
             <span className="size-1.5 rounded-full gradient-accent" />

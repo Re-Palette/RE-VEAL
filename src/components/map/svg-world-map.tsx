@@ -254,6 +254,8 @@ export function SvgWorldMap({
                       />
                     </circle>
                   )}
+                  {/* Invisible hit target — the visible pin is far too small for a finger. */}
+                  <circle r={Math.max(radius * 3, 9 / Math.sqrt(transform.scale))} fill="transparent" />
                   <circle r={radius * 1.7} fill="#9b87e8" opacity={0.14} />
                   <circle
                     r={radius}

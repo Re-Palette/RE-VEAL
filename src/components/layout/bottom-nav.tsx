@@ -12,7 +12,7 @@ export function BottomNav({ counts }: { counts: SidebarCounts }) {
   const { t } = useI18n();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-08 glass-strong pb-[env(safe-area-inset-bottom)] lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-08 bg-white/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] lg:hidden">
       <ul className="flex items-stretch">
         {MOBILE_NAV.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

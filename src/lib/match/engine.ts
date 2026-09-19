@@ -1,6 +1,6 @@
 import { CITY_BY_ID } from "@/lib/data/geo";
 import { SKILL_BY_ID } from "@/lib/data/taxonomy";
-import { CATEGORY_LABELS, ROLE_LABELS } from "@/lib/labels";
+import { AVAILABILITY_LABELS, CATEGORY_LABELS, ROLE_LABELS } from "@/lib/labels";
 import type {
   BeautyEvent,
   Brand,
@@ -72,8 +72,11 @@ function categoryRule(viewer: Profile, categories: string[], max: number): Rule 
     .slice(0, 3)
     .map((c) => CATEGORY_LABELS[c as keyof typeof CATEGORY_LABELS] ?? c)
     .join(" · ");
+  // Proportional to how much of the target's own profile you cover, not to how
+  // much of yours they cover — otherwise a narrow target scores full marks
+  // against everybody and the whole scale collapses at the top.
   return {
-    points: Math.min(max, (shared.length / Math.max(1, viewer.categories.length)) * max * 1.2),
+    points: (shared.length / categories.length) * max,
     max,
     reason: reason("category", label, 85),
   };
@@ -84,7 +87,7 @@ function skillRule(viewer: Profile, skillIds: string[], max: number, label = "Sh
   if (shared.length === 0) return { points: 0, max };
   const names = shared.slice(0, 3).map((s) => SKILL_BY_ID.get(s)?.label ?? s);
   return {
-    points: Math.min(max, (shared.length / 2) * max * 0.8),
+    points: (shared.length / skillIds.length) * max,
     max,
     reason: reason("skill", `${label}: ${names.join(", ")}`, 95),
   };
@@ -94,7 +97,7 @@ function languageRule(viewer: Profile, languages: string[], max: number): Rule {
   const shared = languages.filter((l) => (viewer.languages as string[]).includes(l));
   if (shared.length === 0) return { points: 0, max };
   return {
-    points: Math.min(max, shared.length * max * 0.7),
+    points: (shared.length / languages.length) * max,
     max,
     reason: reason("language", `You share ${shared.length} language${shared.length > 1 ? "s" : ""}`, 60),
   };
@@ -185,21 +188,53 @@ export function scorePerson(viewer: PersonView, target: PersonView): MatchResult
     targetId: target.id,
     score,
     reasons,
-    narrative: personNarrative(viewer, target, reasons),
+    narrative: personNarrative(viewer, target),
   };
 }
 
-function personNarrative(viewer: PersonView, target: PersonView, reasons: MatchReason[]): string {
-  const top = reasons.slice(0, 2).map((r) => r.label.toLowerCase());
-  const city = CITY_BY_ID.get(target.profile.cityId)?.name ?? "";
-  if (top.length === 0) {
-    return `${target.name} works in ${city}. Different focus from yours — which is sometimes the point.`;
+function listPhrase(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * Built from the underlying data rather than by stitching reason labels
+ * together — reason labels are written for chips, and read badly in a sentence.
+ */
+function personNarrative(viewer: PersonView, target: PersonView): string {
+  const v = viewer.profile;
+  const t = target.profile;
+
+  const sharedSkills = t.skillIds
+    .filter((s) => v.skillIds.includes(s))
+    .map((s) => SKILL_BY_ID.get(s)?.label ?? s);
+  const sharedCategories = t.categories.filter((c) => v.categories.includes(c)).map((c) => CATEGORY_LABELS[c]);
+  const targetCity = CITY_BY_ID.get(t.cityId)?.name ?? "";
+  const viewerCity = CITY_BY_ID.get(v.cityId)?.name ?? "";
+
+  const clauses: string[] = [];
+  if (sharedSkills.length > 0) {
+    clauses.push(`shares ${listPhrase(sharedSkills.slice(0, 2))} with you`);
+  } else if (sharedCategories.length > 0) {
+    clauses.push(`works in ${listPhrase(sharedCategories.slice(0, 2))}, like you`);
   }
-  return `${target.name} overlaps with you on ${top.join(" and ")}. ${
-    target.profile.availability === "open-now"
+
+  if (t.targetCityIds.includes(v.cityId) && v.cityId !== t.cityId) {
+    clauses.push(`wants to work in ${viewerCity}`);
+  } else if (t.cityId === v.cityId) {
+    clauses.push(`is in ${targetCity} too`);
+  } else if (v.targetCityIds.includes(t.cityId)) {
+    clauses.push(`is based in ${targetCity}, a city on your list`);
+  } else {
+    clauses.push(`is based in ${targetCity}`);
+  }
+
+  const availability =
+    t.availability === "open-now"
       ? "Open to new work right now."
-      : `Currently ${target.profile.availability.replace(/-/g, " ")}.`
-  }`;
+      : `Currently ${AVAILABILITY_LABELS[t.availability].toLowerCase()}.`;
+
+  return `${target.name} ${listPhrase(clauses)}. ${availability}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -218,7 +253,7 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
     locationRule(v, [brand.cityId, ...brand.marketCityIds], 20),
     languageRule(v, brand.languages, 12),
     {
-      points: roleMatch.length > 0 ? Math.min(20, roleMatch.length * 8) : 0,
+      points: (roleMatch.length / brand.lookingFor.length) * 20,
       max: 20,
       reason:
         roleMatch.length > 0
@@ -294,7 +329,7 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
     locationRule(v, project.cityIds, 22),
     languageRule(v, project.languages, 10),
     {
-      points: matchingSlots.length > 0 ? 20 : 0,
+      points: openSlots.length > 0 ? (matchingSlots.length / openSlots.length) * 20 : 0,
       max: 20,
       reason:
         matchingSlots.length > 0
@@ -324,8 +359,8 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
       reason: project.remoteFriendly ? reason("availability", "Remote friendly", 46) : undefined,
     },
     {
-      points: v.openTo.includes("projects") ? 8 : 3,
-      max: 8,
+      points: v.openTo.includes("projects") ? 6 : 0,
+      max: 6,
     },
   ];
 

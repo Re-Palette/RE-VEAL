@@ -164,7 +164,7 @@ export default async function HomePage() {
       </section>
 
       {/* Activity + Discover --------------------------------------------- */}
-      <section className="mt-14 grid gap-8 lg:grid-cols-[1fr_340px] xl:gap-10">
+      <section className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[1fr_340px] xl:gap-10">
         <div className="min-w-0">
           <SectionHeader
             eyebrow="Discover"

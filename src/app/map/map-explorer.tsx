@@ -171,13 +171,13 @@ export function MapExplorer({
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="hide-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1">
           {["worldwide", ...REGIONS].map((key) => (
             <button
               key={key}
               onClick={() => setRegion(key)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-[13px] font-medium transition-all",
+                "shrink-0 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-all",
                 region === key
                   ? "border-sky/40 bg-sky-soft text-[#2F5E9E]"
                   : "border-ink-08 bg-white text-ink-50 hover:border-ink-30 hover:text-ink",
@@ -186,8 +186,10 @@ export function MapExplorer({
               {key === "worldwide" ? "Worldwide" : REGION_LABELS[key as keyof typeof REGION_LABELS]}
             </button>
           ))}
+        </div>
 
-          <span className="ml-auto flex items-center gap-3 text-xs text-ink-50">
+        <div className="flex items-center justify-end">
+          <span className="flex items-center gap-3 text-xs text-ink-50">
             <span>
               <span className="font-semibold text-ink">{filtered.length}</span> results across{" "}
               <span className="font-semibold text-ink">{markers.length}</span> cities
@@ -217,7 +219,7 @@ export function MapExplorer({
           onSelectCity={setSelectedCityId}
           focus={region}
           personalised={personalised}
-          className="aspect-[4/3] w-full sm:aspect-[2/1] xl:aspect-[2.1/1]"
+          className="aspect-[4/3] w-full self-start sm:aspect-[2/1] xl:sticky xl:top-24 xl:aspect-[2.1/1]"
         />
 
         <aside className="min-w-0">

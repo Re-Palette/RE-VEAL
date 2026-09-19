@@ -54,8 +54,8 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   return (
     <PageContainer>
       <Card className="overflow-hidden">
-        <div className="relative h-44 sm:h-56" style={gradientStyle(event.coverSeed)}>
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/45 to-transparent" />
+        <div className="relative h-32 sm:h-40" style={gradientStyle(event.coverSeed)}>
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
           <div className="absolute inset-x-5 top-5 flex flex-wrap gap-2 sm:inset-x-8">
             <Badge variant="ink" size="md">
               {EVENT_TYPE_LABELS[event.type]}
@@ -116,7 +116,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
         </div>
       </Card>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-8">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-8">
         <div className="min-w-0 space-y-6">
           {match && (
             <Card sheen className="p-6">

@@ -55,7 +55,7 @@ export function TopBar({ viewer, counts }: { viewer: PersonView; counts: Sidebar
 
           <button
             onClick={() => setSearchOpen(true)}
-            className="group hidden h-10 max-w-xl flex-1 items-center gap-2.5 rounded-full border border-ink-15 bg-white/70 px-4 text-sm text-ink-30 transition-all hover:border-lavender/40 hover:bg-white sm:flex"
+            className="group hidden h-10 min-w-0 max-w-xl flex-1 items-center gap-2.5 rounded-full border border-ink-15 bg-white/70 px-4 text-sm text-ink-30 transition-all hover:border-lavender/40 hover:bg-white sm:flex"
           >
             <Search className="size-4 shrink-0 transition-colors group-hover:text-lavender" />
             <span className="truncate">{t("search.placeholder")}</span>

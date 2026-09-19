@@ -63,12 +63,12 @@ export function ProfileView({
     <PageContainer>
       {/* Header ----------------------------------------------------------- */}
       <Card className="overflow-hidden">
-        <div className="relative h-36 sm:h-44" style={gradientStyle(person.avatarSeed)}>
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent" />
+        <div className="relative h-28 sm:h-32" style={gradientStyle(person.avatarSeed)}>
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/15 to-transparent" />
         </div>
 
         <div className="px-5 pb-6 sm:px-8">
-          <div className="-mt-16 flex flex-wrap items-end justify-between gap-5 sm:-mt-20">
+          <div className="-mt-14 flex flex-wrap items-end justify-between gap-5 sm:-mt-16">
             <div className="min-w-0">
               <Avatar seed={person.avatarSeed} name={person.name} size="2xl" ring className="shadow-lift" />
               <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -136,7 +136,7 @@ export function ProfileView({
         </div>
       </Card>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:gap-8">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:gap-8">
         {/* Sidebar -------------------------------------------------------- */}
         <aside className="space-y-5">
           {match && !isSelf && (
