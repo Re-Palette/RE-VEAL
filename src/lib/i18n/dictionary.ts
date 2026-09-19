@@ -673,6 +673,12 @@ export const UI_STRINGS = {
   // ── Content translation ─────────────────────────────────────────────────
   "content.translatedFrom": { en: "Translated from {language}", ja: "{language}から翻訳", ko: "{language}에서 번역됨", zh: "译自{language}" },
   "content.original": { en: "Original · {language}", ja: "原文 · {language}", ko: "원문 · {language}", zh: "原文 · {language}" },
+  "content.notTranslated": {
+    en: "Shown in the original {language}",
+    ja: "原文（{language}）のまま表示しています",
+    ko: "원문({language}) 그대로 표시 중",
+    zh: "以原文（{language}）显示",
+  },
 
   // ── Not found ───────────────────────────────────────────────────────────
   "notFound.title": { en: "This page is not on the map", ja: "このページはマップ上にありません", ko: "이 페이지는 지도에 없습니다", zh: "这个页面不在地图上" },

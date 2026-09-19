@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CalendarRange, Coins, Globe2, Languages, MapPin, MessageCircle, Users } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
+import { TranslatableText } from "@/components/content/translatable-text";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,9 +79,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="min-w-0 max-w-3xl">
               <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.03em] sm:text-[36px]">
-                {project.title}
+                {i18n.content(`${project.id}.title`, project.title)}
               </h1>
-              <p className="mt-3 text-[15px] leading-relaxed text-ink-70">{project.summary}</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink-70">
+                {i18n.content(`${project.id}.summary`, project.summary)}
+              </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-sm text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
@@ -94,11 +97,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarRange className="size-4 text-ink-30" />
-                  {formatDateRange(project.startDate, project.endDate)}
+                  {formatDateRange(project.startDate, project.endDate, i18n.language)}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Coins className="size-4 text-ink-30" />
-                  {project.budget}
+                  {i18n.content(`${project.id}.budget`, project.budget)}
                 </span>
                 {project.remoteFriendly && (
                   <span className="inline-flex items-center gap-1.5">
@@ -146,7 +149,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">
               {i18n.t("projectDetail.overview")}
             </h2>
-            <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink-70">{project.overview}</p>
+            <TranslatableText
+              text={project.overview}
+              from="en"
+              contentKey={`${project.id}.overview`}
+              className="whitespace-pre-line text-[15px] leading-[1.75]"
+            />
 
             <div className="mt-6 flex flex-wrap gap-1.5">
               {project.categories.map((c) => (

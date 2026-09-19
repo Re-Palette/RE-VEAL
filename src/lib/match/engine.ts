@@ -507,7 +507,7 @@ export function scoreEvent(viewer: PersonView, event: BeautyEvent, i18n: I18n): 
     score,
     reasons,
     narrative: i18n.t("narrative.event", {
-      title: event.title,
+      title: i18n.content(`${event.id}.title`, event.title),
       city: i18n.city(event.cityId),
       categories: i18n.list(event.categories.slice(0, 2).map((c) => i18n.L.category[c])),
     }),
@@ -601,7 +601,10 @@ export function scoreCity(
     targetId: city.id,
     score,
     reasons,
-    narrative: i18n.t("narrative.city", { city: i18n.city(city.id), tagline: city.tagline }),
+    narrative: i18n.t("narrative.city", {
+      city: i18n.city(city.id),
+      tagline: i18n.content(`${city.id}.tagline`, city.tagline),
+    }),
   };
 }
 

@@ -8,6 +8,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { ConnectButton } from "@/components/actions/connect-button";
 import { MatchReasons, MatchRing } from "@/components/match/match-score";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
+import { TranslatableText } from "@/components/content/translatable-text";
 import { PortfolioCard } from "@/components/cards/content-cards";
 import { ProjectCard } from "@/components/cards/project-card";
 import { EventCard } from "@/components/cards/event-card";
@@ -48,7 +49,7 @@ export async function ProfileView({
   collaborators: PersonView[];
   isSelf?: boolean;
 }) {
-  const { t, L, skill, interest, city: cityName, country: countryName } = await getI18n();
+  const { t, L, skill, interest, city: cityName, country: countryName, content } = await getI18n();
   const p = person.profile;
   const countryId = CITY_BY_ID.get(p.cityId)?.countryId ?? p.countryId;
   const country = COUNTRY_BY_ID.get(countryId);
@@ -75,7 +76,9 @@ export async function ProfileView({
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-ink-50">@{person.handle}</p>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-70">{p.headline}</p>
+              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-70">
+                {content(`${person.id}.headline`, p.headline)}
+              </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
@@ -151,7 +154,12 @@ export async function ProfileView({
             <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.14em]">
               {t("profile.about")}
             </h2>
-            <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink-70">{p.bio}</p>
+            <TranslatableText
+              text={p.bio}
+              from="en"
+              contentKey={`${person.id}.bio`}
+              className="whitespace-pre-line text-[14px]"
+            />
           </Card>
 
           <Card className="p-5">

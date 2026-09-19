@@ -265,7 +265,7 @@ function RecommendedPanel({
   viewerRole: string;
   personalised: boolean;
 }) {
-  const { t, city: cityName } = useI18n();
+  const { t, city: cityName, content } = useI18n();
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <div className="border-b border-ink-08 p-5">
@@ -298,7 +298,7 @@ function RecommendedPanel({
                   {info.match && <MatchBadge score={info.match.score} className="ml-auto" />}
                 </span>
                 <span className="mt-1 block line-clamp-2 text-[13px] leading-relaxed text-ink-50">
-                  {info.city.tagline}
+                  {content(`${info.city.id}.tagline`, info.city.tagline)}
                 </span>
                 {info.match && <MatchReasons reasons={info.match.reasons} limit={2} className="mt-2" />}
               </span>
@@ -330,7 +330,7 @@ function CityPanel({
   personalised: boolean;
   onClose: () => void;
 }) {
-  const { t, L, city: cityName } = useI18n();
+  const { t, L, city: cityName, content } = useI18n();
   const counts = personalised ? info.personalCounts : info.totals;
   const country = COUNTRY_BY_ID.get(info.city.countryId);
   const grouped = KIND_ORDER.map((kind) => ({
@@ -358,7 +358,9 @@ function CityPanel({
           </h2>
           {info.match && <MatchBadge score={info.match.score} showLabel />}
         </div>
-        <p className="mt-2 text-[13px] leading-relaxed text-ink-50">{info.city.tagline}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-ink-50">
+          {content(`${info.city.id}.tagline`, info.city.tagline)}
+        </p>
 
         <dl className="mt-4 grid grid-cols-4 gap-2">
           {[

@@ -51,6 +51,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
         <TranslatableText
           text={post.body}
           from={post.language as LanguageCode}
+          contentKey={`${post.id}.body`}
           className={featured ? "mt-2.5 text-sm" : "mt-2 line-clamp-3 text-[13px]"}
         />
 

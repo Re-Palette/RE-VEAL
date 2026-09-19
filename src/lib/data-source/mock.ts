@@ -172,7 +172,7 @@ export class MockDataSource implements DataSource {
           id: brand.id,
           kind: "brand",
           title: brand.name,
-          subtitle: `${brand.tagline} · ${i18n.city(brand.cityId)}`,
+          subtitle: `${i18n.content(`${brand.id}.tagline`, brand.tagline)} · ${i18n.city(brand.cityId)}`,
           href: `/brands/${brand.id}`,
           seed: brand.avatarSeed,
           score,
@@ -185,7 +185,7 @@ export class MockDataSource implements DataSource {
         push({
           id: project.id,
           kind: "project",
-          title: project.title,
+          title: i18n.content(`${project.id}.title`, project.title),
           subtitle: project.cityIds.map((c) => i18n.city(c)).join(" × "),
           href: `/projects/${project.id}`,
           seed: project.coverSeed,
@@ -200,7 +200,7 @@ export class MockDataSource implements DataSource {
         push({
           id: event.id,
           kind: "event",
-          title: event.title,
+          title: i18n.content(`${event.id}.title`, event.title),
           subtitle: `${i18n.city(event.cityId)} · ${event.startDate}`,
           href: `/events/${event.id}`,
           seed: event.coverSeed,

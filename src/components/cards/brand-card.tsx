@@ -13,7 +13,7 @@ import { formatCount } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 
 export function BrandCard({ brand, match }: { brand: Brand; match?: MatchResult }) {
-  const { t, L, city, country } = useI18n();
+  const { t, L, city, country, content } = useI18n();
   const countryId = CITY_BY_ID.get(brand.cityId)?.countryId ?? brand.countryId;
   const openings = brand.openOpportunities.length;
 
@@ -35,7 +35,9 @@ export function BrandCard({ brand, match }: { brand: Brand; match?: MatchResult 
             <h3 className="truncate font-display text-base font-semibold tracking-[-0.01em]">{brand.name}</h3>
             {brand.verified && <BadgeCheck className="size-4 shrink-0 text-sky" />}
           </div>
-          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-70">{brand.tagline}</p>
+          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-70">
+            {content(`${brand.id}.tagline`, brand.tagline)}
+          </p>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-50">
             <MapPin className="size-3.5 text-ink-30" />
             {city(brand.cityId)}, {country(countryId)} {COUNTRY_BY_ID.get(countryId)?.flag}

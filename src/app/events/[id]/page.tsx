@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CalendarDays, Languages, MapPin, Ticket, Users, Wifi } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
+import { TranslatableText } from "@/components/content/translatable-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -80,14 +81,16 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="min-w-0 max-w-3xl">
               <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.03em] sm:text-[36px]">
-                {event.title}
+                {i18n.content(`${event.id}.title`, event.title)}
               </h1>
-              <p className="mt-3 text-[15px] leading-relaxed text-ink-70">{event.summary}</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink-70">
+                {i18n.content(`${event.id}.summary`, event.summary)}
+              </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-sm text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays className="size-4 text-ink-30" />
-                  {formatDateRange(event.startDate, event.endDate)}
+                  {formatDateRange(event.startDate, event.endDate, i18n.language)}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="size-4 text-ink-30" />
@@ -134,7 +137,12 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
             <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.02em]">
               {i18n.t("eventDetail.about")}
             </h2>
-            <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink-70">{event.description}</p>
+            <TranslatableText
+              text={event.description}
+              from="en"
+              contentKey={`${event.id}.description`}
+              className="whitespace-pre-line text-[15px] leading-[1.75]"
+            />
             <div className="mt-6 flex flex-wrap gap-1.5">
               {event.categories.map((c) => (
                 <Badge key={c} variant="blush" size="md">

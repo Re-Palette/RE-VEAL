@@ -119,14 +119,32 @@ filters, so the map is the query result rather than an illustration.
 
 ### 4. Translation & i18n — `src/lib/i18n/`
 
-Two separate concerns, deliberately:
+The locale lives in a **cookie**, not localStorage, because most of the product
+— page headings, filter labels, every match reason — renders on the server. A
+client-only locale leaves all of that stuck in English, which is exactly the
+bug this layer was rebuilt to fix. The root layout reads the cookie, so the
+first paint is already correct; changing language updates client text
+immediately and calls `router.refresh()` for the server half.
 
-- **UI chrome** — a static `ja / en / ko / zh` dictionary behind `useI18n()`.
-- **User content** — a `Translator` interface. `PassthroughTranslator` marks
-  text as translated without altering it, which is honest about what is
-  happening while keeping the whole interaction (notice, "show original"
-  toggle, attribution) built and testable. Connecting a translation API means
-  editing `translator.ts` only.
+Three separate concerns:
+
+- **UI chrome** — `dictionary.ts`, 460 keys across `ja / en / ko / zh` with
+  `{placeholder}` interpolation. Read via `useI18n()` on the client and
+  `await getI18n()` on the server; both return the same `I18n` object, so a
+  component is written once regardless of where it renders.
+- **Taxonomy** — all 19 enumerations plus skills, interests, city names and
+  country names (`labels-enums.ts`, `labels-taxonomy.ts`).
+- **User content** — `content.ts` holds translations for the short editorial
+  fields that fill cards (headlines, taglines, titles, summaries, budgets,
+  city taglines), and `LookupTranslator` resolves against it. Long-form text —
+  bios, project overviews, brand stories — stays in its original language and
+  says so; that is the text a real translation API exists to handle, and
+  connecting one means editing `translator.ts` alone, with this table becoming
+  its cache.
+
+Match reasons and narratives are built from templates rather than concatenated
+strings, and narrative clauses are whole sentences joined by a locale-specific
+separator, since CJK does not join clauses the way English does.
 
 ---
 
@@ -179,7 +197,8 @@ collapses into a top-bar drawer plus a five-item bottom navigation below
 eight entity types, every filter / sort / tab on every listing, map pan-zoom
 and city selection, AI Match including multilingual intent extraction, match
 scoring and reasoning throughout, connect and apply flows, message composing,
-notification read state, language switching, translation toggles.
+notification read state, and language switching across the entire interface —
+chrome, taxonomy, match reasoning, dates and card-level content.
 
 **Mocked:** persistence. Connecting, applying, sending and saving are local
 state; they survive interaction but not a reload. Each sits behind a component
@@ -198,5 +217,6 @@ boundary that becomes a server action unchanged.
 - **Mapbox / Google Maps** — implement `MapEngineProps`, swap the engine in
   `src/components/map/world-map.tsx`.
 - **A translation API** — implement `Translator` in `src/lib/i18n/translator.ts`.
-- **More languages** — add the code to `LANGUAGES` and fill in
-  `src/lib/i18n/dictionary.ts`; TypeScript will list every string that needs one.
+- **More languages** — add the code to `LANGUAGES`, then fill in
+  `dictionary.ts`, `labels-enums.ts` and `labels-taxonomy.ts`; TypeScript lists
+  every entry that still needs one.

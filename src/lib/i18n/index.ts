@@ -1,6 +1,7 @@
 import { LANGUAGES, type LanguageCode } from "@/lib/types";
 import { translateKey, type UIKey } from "@/lib/i18n/dictionary";
 import { ENUM_LABELS, LANGUAGE_LABELS, LANGUAGE_SHORT, type EnumLabels } from "@/lib/i18n/labels-enums";
+import { contentText, hasContentTranslation } from "@/lib/i18n/content";
 import {
   CITY_LABELS,
   COUNTRY_LABELS,
@@ -43,6 +44,12 @@ export interface I18n {
   /** Joins complete sentences; CJK locales do not put a space between them. */
   sentences: (parts: string[]) => string;
   and: (a: string, b: string) => string;
+  /**
+   * User-generated content: returns the translation when one exists, otherwise
+   * the original text. `key` is "<entityId>.<field>".
+   */
+  content: (key: string, original: string) => string;
+  isTranslated: (key: string) => boolean;
 }
 
 const cache = new Map<LanguageCode, I18n>();
@@ -65,6 +72,8 @@ export function createI18n(language: LanguageCode): I18n {
     list: (items) => items.filter(Boolean).join(t("format.listJoin")),
     sentences: (parts) => parts.filter(Boolean).join(t("format.sentenceJoin")),
     and: (a, b) => (a && b ? t("format.and", { a, b }) : a || b),
+    content: (key, original) => contentText(key, original, language),
+    isTranslated: (key) => hasContentTranslation(key, language),
   };
 
   cache.set(language, i18n);

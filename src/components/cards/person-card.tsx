@@ -22,7 +22,7 @@ export function PersonCard({
   match?: MatchResult;
   connection?: ConnectionStatus;
 }) {
-  const { t, L, skill, city, country } = useI18n();
+  const { t, L, skill, city, country, content } = useI18n();
   const countryId = CITY_BY_ID.get(person.profile.cityId)?.countryId ?? person.profile.countryId;
 
   return (
@@ -47,7 +47,9 @@ export function PersonCard({
             <MapPin className="size-3.5 text-ink-30" />
             {city(person.profile.cityId)}, {country(countryId)} {COUNTRY_BY_ID.get(countryId)?.flag}
           </p>
-          <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">{person.profile.headline}</p>
+          <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">
+            {content(`${person.id}.headline`, person.profile.headline)}
+          </p>
         </div>
       </Link>
 

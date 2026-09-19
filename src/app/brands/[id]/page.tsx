@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BadgeCheck, Building2, CalendarDays, MapPin, Package, Sparkles, Users } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
+import { TranslatableText } from "@/components/content/translatable-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,9 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                   {i18n.L.brandType[brand.type]}
                 </Badge>
               </div>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-70">{brand.tagline}</p>
+              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-70">
+                {i18n.content(`${brand.id}.tagline`, brand.tagline)}
+              </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-50">
                 <span className="inline-flex items-center gap-1.5">
@@ -181,7 +184,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                 label: i18n.t("brandDetail.tab.story"),
                 node: (
                   <Card className="p-6 sm:p-8">
-                    <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink-70">{brand.story}</p>
+                    <TranslatableText
+                      text={brand.story}
+                      from="en"
+                      contentKey={`${brand.id}.story`}
+                      className="whitespace-pre-line text-[15px] leading-[1.75]"
+                    />
                   </Card>
                 ),
               },
@@ -210,7 +218,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
                                 </span>
                                 <span className="inline-flex items-center gap-1.5">
                                   <CalendarDays className="size-3.5 text-ink-30" />
-                                  {i18n.t("brandDetail.closes", { date: formatDate(opportunity.deadline) })}
+                                  {i18n.t("brandDetail.closes", { date: formatDate(opportunity.deadline, i18n.language) })}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5">
                                   <Sparkles className="size-3.5 text-ink-30" />

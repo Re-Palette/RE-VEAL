@@ -18,7 +18,7 @@ export function CityCard({
   match?: MatchResult;
   counts: { projects: number; brands: number; events: number; people: number };
 }) {
-  const { t, city: cityName } = useI18n();
+  const { t, city: cityName, content } = useI18n();
   const country = COUNTRY_BY_ID.get(city.countryId);
 
   return (
@@ -36,7 +36,9 @@ export function CityCard({
             </h3>
             <ArrowUpRight className="size-4 shrink-0 text-ink-30" />
           </div>
-          <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-ink-50">{city.tagline}</p>
+          <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-ink-50">
+            {content(`${city.id}.tagline`, city.tagline)}
+          </p>
 
           <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-ink-08 pt-3.5">
             {[

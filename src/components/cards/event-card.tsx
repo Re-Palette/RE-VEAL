@@ -12,7 +12,7 @@ import { daysUntil, formatDateRange } from "@/lib/utils";
 import { gradientStyle } from "@/lib/visual";
 
 export function EventCard({ event, match }: { event: BeautyEvent; match?: MatchResult }) {
-  const { t, L, language, city } = useI18n();
+  const { t, L, language, city, content } = useI18n();
   const country = COUNTRY_BY_ID.get(CITY_BY_ID.get(event.cityId)?.countryId ?? "");
   const until = daysUntil(event.startDate);
   const start = new Date(event.startDate);
@@ -44,15 +44,19 @@ export function EventCard({ event, match }: { event: BeautyEvent; match?: MatchR
         </div>
 
         <div className="flex flex-1 flex-col p-5">
-          <h3 className="font-display text-[15px] font-semibold leading-snug tracking-[-0.01em]">{event.title}</h3>
+          <h3 className="font-display text-[15px] font-semibold leading-snug tracking-[-0.01em]">
+            {content(`${event.id}.title`, event.title)}
+          </h3>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-50">
             <MapPin className="size-3.5 shrink-0 text-ink-30" />
             <span className="truncate">
               {event.venue}, {city(event.cityId)} {country?.flag}
             </span>
           </p>
-          <p className="mt-1 text-xs text-ink-50">{formatDateRange(event.startDate, event.endDate)}</p>
-          <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">{event.summary}</p>
+          <p className="mt-1 text-xs text-ink-50">{formatDateRange(event.startDate, event.endDate, language)}</p>
+          <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">
+            {content(`${event.id}.summary`, event.summary)}
+          </p>
 
           <div className="mt-auto flex items-center justify-between gap-2 border-t border-ink-08 pt-3.5 text-[11px] text-ink-50">
             <span className="inline-flex items-center gap-1.5">

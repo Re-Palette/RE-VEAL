@@ -1,19 +1,21 @@
 import type { LanguageCode } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/i18n/labels-enums";
+import { contentText } from "@/lib/i18n/content";
 
 /**
  * Content translation seam.
  *
  * RE:VEAL is global, so a post written in Japanese has to be readable by
- * someone in São Paulo. The real implementation will call a translation API;
- * until then `PassthroughTranslator` marks text as translated without altering
- * it, which is honest about what is happening and keeps the whole "translated /
- * show original" interaction fully built and testable.
+ * someone in São Paulo. `LookupTranslator` resolves against the stored content
+ * translations; a production implementation swaps in a translation API and
+ * keeps that table as its cache.
  */
 export interface TranslationRequest {
   text: string;
   from: LanguageCode;
   to: LanguageCode;
+  /** "<entityId>.<field>" — lets the lookup translator find a stored string. */
+  key?: string;
 }
 
 export interface TranslationResult {
@@ -31,11 +33,17 @@ export interface Translator {
   translateMany(requests: TranslationRequest[]): Promise<TranslationResult[]>;
 }
 
-export class PassthroughTranslator implements Translator {
-  readonly id = "passthrough";
+/**
+ * Resolves against the stored content translations and falls back to the
+ * original text. A production implementation calls a translation API here and
+ * keeps this table as its cache; nothing downstream changes.
+ */
+export class LookupTranslator implements Translator {
+  readonly id = "lookup";
 
-  async translate({ text, from, to }: TranslationRequest): Promise<TranslationResult> {
-    return { text, translated: from !== to, from, to, provider: this.id };
+  async translate({ text, from, to, key }: TranslationRequest): Promise<TranslationResult> {
+    const translated = key ? contentText(key, text, to) : text;
+    return { text: translated, translated: translated !== text, from, to, provider: this.id };
   }
 
   async translateMany(requests: TranslationRequest[]): Promise<TranslationResult[]> {
@@ -43,7 +51,7 @@ export class PassthroughTranslator implements Translator {
   }
 }
 
-export const translator: Translator = new PassthroughTranslator();
+export const translator: Translator = new LookupTranslator();
 
 export function translationNotice(from: LanguageCode, to: LanguageCode): string {
   return `Translated from ${LANGUAGE_LABELS[from]} to ${LANGUAGE_LABELS[to]}`;

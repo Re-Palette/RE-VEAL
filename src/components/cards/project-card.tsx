@@ -18,7 +18,7 @@ const STATUS_VARIANT = {
 } as const;
 
 export function ProjectCard({ project, match }: { project: Project; match?: MatchResult }) {
-  const { t, L, city } = useI18n();
+  const { t, L, city, content, language } = useI18n();
   const cities = project.cityIds.map((id) => city(id));
   const openSlots = project.roleSlots.filter((s) => s.filled < s.count);
   const filledTotal = project.roleSlots.reduce((sum, s) => sum + s.filled, 0);
@@ -42,7 +42,7 @@ export function ProjectCard({ project, match }: { project: Project; match?: Matc
 
         <div className="flex flex-1 flex-col p-5">
           <h3 className="font-display text-[17px] font-semibold leading-snug tracking-[-0.015em]">
-            {project.title}
+            {content(`${project.id}.title`, project.title)}
           </h3>
 
           <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-50">
@@ -51,10 +51,12 @@ export function ProjectCard({ project, match }: { project: Project; match?: Matc
           </p>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-50">
             <CalendarRange className="size-3.5 shrink-0 text-ink-30" />
-            {formatDateRange(project.startDate, project.endDate)}
+            {formatDateRange(project.startDate, project.endDate, language)}
           </p>
 
-          <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">{project.summary}</p>
+          <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-ink-70">
+            {content(`${project.id}.summary`, project.summary)}
+          </p>
 
           {openSlots.length > 0 && (
             <div className="mt-3.5">

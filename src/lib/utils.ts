@@ -32,27 +32,33 @@ export function formatCount(value: number): string {
   return String(value);
 }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-export function formatDate(iso: string): string {
+/** Dates render in the viewer's locale, so "Mar 2" becomes "3月2日" in Japanese. */
+export function formatDate(iso: string, locale = "en"): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
 }
 
-export function formatDateRange(startIso: string, endIso: string): string {
+export function formatDateRange(startIso: string, endIso: string, locale = "en"): string {
   const start = new Date(startIso);
   const end = new Date(endIso);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return `${startIso} – ${endIso}`;
-  const sameYear = start.getUTCFullYear() === end.getUTCFullYear();
-  const sameMonth = sameYear && start.getUTCMonth() === end.getUTCMonth();
-  if (sameMonth) {
-    return `${MONTHS[start.getUTCMonth()]} ${start.getUTCDate()}–${end.getUTCDate()}, ${end.getUTCFullYear()}`;
+  if (start.getTime() === end.getTime()) return formatDate(startIso, locale);
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    }).formatRange(start, end);
+  } catch {
+    return `${formatDate(startIso, locale)} – ${formatDate(endIso, locale)}`;
   }
-  if (sameYear) {
-    return `${MONTHS[start.getUTCMonth()]} ${start.getUTCDate()} – ${MONTHS[end.getUTCMonth()]} ${end.getUTCDate()}, ${end.getUTCFullYear()}`;
-  }
-  return `${formatDate(startIso)} – ${formatDate(endIso)}`;
 }
 
 /** "3d ago" style relative time, computed against a fixed clock for stable SSR. */

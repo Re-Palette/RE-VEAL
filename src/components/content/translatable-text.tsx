@@ -9,28 +9,38 @@ import { cn } from "@/lib/utils";
 /**
  * Content written in one language, read in another.
  *
- * The Translator abstraction is a passthrough today, so the text itself is
- * unchanged — but the whole interaction (notice, toggle, attribution) is real,
- * and connecting a translation API means changing `lib/i18n/translator.ts`
- * alone. Text already in the viewer's language renders plainly, with no notice.
+ * The label is deliberately honest in both directions: when a translation
+ * exists the viewer can flip back to the original, and when one does not the
+ * text says so rather than implying it was translated. Connecting a real
+ * translation API means editing lib/i18n/translator.ts alone.
  */
 export function TranslatableText({
   text,
   from,
+  contentKey,
   className,
 }: {
   text: string;
   from: LanguageCode;
+  /** "<entityId>.<field>" — when a stored translation exists it is used. */
+  contentKey?: string;
   className?: string;
 }) {
-  const { language, t, languageName } = useI18n();
+  const { language, t, languageName, content, isTranslated } = useI18n();
   const [showOriginal, setShowOriginal] = useState(false);
-  const needsTranslation = from !== language;
+
+  const translated = contentKey ? isTranslated(contentKey) : false;
+  const body = translated && !showOriginal && contentKey ? content(contentKey, text) : text;
+  const differentLanguage = from !== language;
+
+  if (!differentLanguage) {
+    return <p className={cn("leading-relaxed text-ink-70", className)}>{text}</p>;
+  }
 
   return (
     <div>
-      <p className={cn("leading-relaxed text-ink-70", className)}>{text}</p>
-      {needsTranslation && (
+      <p className={cn("leading-relaxed text-ink-70", className)}>{body}</p>
+      {translated ? (
         <button
           onClick={(event) => {
             event.preventDefault();
@@ -44,6 +54,11 @@ export function TranslatableText({
             ? t("content.original", { language: languageName(from) })
             : t("content.translatedFrom", { language: languageName(from) })}
         </button>
+      ) : (
+        <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-ink-30">
+          <Languages className="size-3" />
+          {t("content.notTranslated", { language: languageName(from) })}
+        </span>
       )}
     </div>
   );
