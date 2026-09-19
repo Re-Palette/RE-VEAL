@@ -1,0 +1,16 @@
+import { cn } from "@/lib/utils";
+
+export function Logo({ className, compact = false }: { className?: string; compact?: boolean }) {
+  return (
+    <span className={cn("inline-flex items-baseline gap-2 select-none", className)}>
+      <span className="font-display text-[19px] font-semibold tracking-[-0.03em] text-ink">
+        RE<span className="text-gradient">:</span>VEAL
+      </span>
+      {!compact && (
+        <span className="hidden text-[10px] font-medium uppercase tracking-[0.2em] text-ink-30 lg:inline">
+          Global Beauty
+        </span>
+      )}
+    </span>
+  );
+}
