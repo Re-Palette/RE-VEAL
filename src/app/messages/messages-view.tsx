@@ -60,17 +60,16 @@ export function MessagesView({
     return thread.projectId ?? thread.brandId ?? thread.id;
   };
 
-  const filtered = useMemo(
-    () =>
-      threads.filter((thread) => {
-        if (kind !== "all" && thread.kind !== kind) return false;
-        if (query && !titleFor(thread).toLowerCase().includes(query.toLowerCase())) return false;
-        return true;
-      }),
-    // titleFor depends only on stable props
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [threads, kind, query, personById],
-  );
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return threads.filter((thread) => {
+      if (kind !== "all" && thread.kind !== kind) return false;
+      if (needle.length === 0) return true;
+      const other = thread.participantUserIds.find((id) => id !== viewer.id);
+      const title = thread.title ?? personById.get(other ?? "")?.name ?? "";
+      return title.toLowerCase().includes(needle);
+    });
+  }, [threads, kind, query, personById, viewer.id]);
 
   const active = threads.find((t) => t.id === activeId);
   const activeMessages = active ? [...(messages[active.id] ?? []), ...(sent[active.id] ?? [])] : [];

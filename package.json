@@ -2,12 +2,11 @@
   "name": "re-veal",
   "version": "0.1.0",
   "private": true,
-  "description": "RE:VEAL — Beauty Connects the World. A global beauty ecosystem connecting people, brands, projects and events.",
+  "description": "RE:VEAL \u2014 Beauty Connects the World. A global beauty ecosystem connecting people, brands, projects and events.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "generate:map": "node scripts/generate-world-map.mjs"
   },

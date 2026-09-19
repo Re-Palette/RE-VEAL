@@ -28,7 +28,7 @@ export interface Interpreter {
 }
 
 const CATEGORY_TERMS: Record<BeautyCategory, string[]> = {
-  makeup: ["makeup", "make-up", "cosmetics", "メイク", "化粧", "코스메틱", "메이크업", "彩妆", "化妝"],
+  makeup: ["makeup", "make-up", "cosmetics", "メイク", "化粧", "コスメ", "化粧品", "코스메틱", "메이크업", "彩妆", "化妝"],
   skincare: ["skincare", "skin care", "serum", "スキンケア", "美容液", "스킨케어", "护肤", "護膚"],
   hair: ["hair", "hairstyle", "salon", "ヘア", "髪", "헤어", "美发", "美髮"],
   nail: ["nail", "manicure", "ネイル", "네일", "美甲"],
@@ -107,15 +107,33 @@ const CITY_ALIASES: Record<string, string[]> = {
   capetown: ["cape town", "ケープタウン"],
 };
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Short aliases like "ai", "ar" and "la" are useful but dangerous: a plain
+ * substring test fires "ar" inside "skincare" and "la" inside "collaborate".
+ * ASCII terms are therefore matched on word boundaries; CJK terms, which are
+ * written without spaces, keep substring matching.
+ */
+function matchTerm(haystack: string, term: string): boolean {
+  const needle = term.toLowerCase();
+  if (/^[\x20-\x7e]+$/.test(needle)) {
+    return new RegExp(`(^|[^a-z0-9])${escapeRegExp(needle)}([^a-z0-9]|$)`).test(haystack);
+  }
+  return haystack.includes(needle);
+}
+
 function matchTerms(haystack: string, terms: string[]): boolean {
-  return terms.some((term) => haystack.includes(term.toLowerCase()));
+  return terms.some((term) => matchTerm(haystack, term));
 }
 
 export function interpretSync(query: string): Intent {
   const q = query.toLowerCase();
 
   const cityIds = CITIES.filter(
-    (city) => q.includes(city.name.toLowerCase()) || matchTerms(q, CITY_ALIASES[city.id] ?? []),
+    (city) => matchTerm(q, city.name) || matchTerms(q, CITY_ALIASES[city.id] ?? []),
   ).map((c) => c.id);
 
   const countryIds = Object.entries(COUNTRY_TERMS)

@@ -24,8 +24,10 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
 
   return (
     <Card interactive className="flex h-full flex-col overflow-hidden">
+      {/* The featured card spans two grid rows, so its cover grows to absorb the
+          extra height rather than leaving a block of empty white beneath. */}
       <div
-        className={featured ? "relative h-52 shrink-0" : "relative h-36 shrink-0"}
+        className={featured ? "relative min-h-52 flex-1" : "relative h-36 shrink-0"}
         style={gradientStyle(post.coverSeed)}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent" />

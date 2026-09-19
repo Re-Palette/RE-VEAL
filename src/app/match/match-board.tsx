@@ -110,7 +110,7 @@ export function MatchBoard({
           title={ai ? `${active.length} results for what you described` : "Ranked for you right now"}
           description={
             ai
-              ? "Re-ranked against your request. The chips above show how it was interpreted."
+              ? "Ordered by how much of your request each result satisfies, not by score alone — so a result matching two things you asked for sits above a higher-scoring one that matches one. The first chip on each card says which."
               : "Scored on skills, beauty category, location, language, goals, availability and open opportunities."
           }
           action={<ChipGroup value={scope} onChange={setScope} options={SCOPES} />}

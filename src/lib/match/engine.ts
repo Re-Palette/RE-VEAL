@@ -47,17 +47,40 @@ function reason(kind: MatchReason["kind"], label: string, weight: number): Match
   return { kind, label, weight };
 }
 
-function locationRule(viewer: Profile, cityIds: string[], max: number): Rule {
-  const wanted = cityIds.filter((id) => viewer.targetCityIds.includes(id));
+function listPhrase(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+type LocationContext = "person" | "brand" | "project" | "event";
+
+/**
+ * Location wording has to stay literally true: a brand whose products sell in
+ * Tokyo is not "based in Tokyo", and a three-city project is not "in" any one
+ * of them. The context decides the phrasing; the scoring is the same.
+ */
+function locationRule(viewer: Profile, cityIds: string[], max: number, context: LocationContext): Rule {
+  const unique = Array.from(new Set(cityIds));
+  const wanted = unique.filter((id) => viewer.targetCityIds.includes(id));
+  const viewerCity = CITY_BY_ID.get(viewer.cityId)?.name ?? viewer.cityId;
+
   if (wanted.length > 0) {
     const names = wanted.map((id) => CITY_BY_ID.get(id)?.name ?? id);
-    const viewerCity = CITY_BY_ID.get(viewer.cityId)?.name ?? viewer.cityId;
-    const label = wanted.includes(viewer.cityId)
-      ? `Based in ${viewerCity}, where you are`
-      : `${viewerCity} × ${names.filter((n) => n !== viewerCity).join(" × ")}`;
+    const includesHome = wanted.includes(viewer.cityId);
+    let label: string;
+    if (context === "project" && unique.length > 1) {
+      label = unique.map((id) => CITY_BY_ID.get(id)?.name ?? id).join(" × ");
+    } else if (context === "brand") {
+      label = `Active in ${listPhrase(names.slice(0, 3))}`;
+    } else if (includesHome) {
+      label = `In ${viewerCity}, where you are`;
+    } else {
+      label = `${listPhrase(names.slice(0, 2))} — on your target list`;
+    }
     return { points: max, max, reason: reason("location", label, 90) };
   }
-  const regions = new Set(cityIds.map((id) => CITY_BY_ID.get(id)?.region).filter(Boolean));
+
+  const regions = new Set(unique.map((id) => CITY_BY_ID.get(id)?.region).filter(Boolean));
   const viewerRegion = CITY_BY_ID.get(viewer.cityId)?.region;
   if (viewerRegion && regions.has(viewerRegion)) {
     return { points: max * 0.5, max, reason: reason("location", "Same region as you", 55) };
@@ -147,7 +170,7 @@ export function scorePerson(viewer: PersonView, target: PersonView): MatchResult
             )
           : undefined,
     },
-    locationRule(v, [t.cityId], 20),
+    locationRule(v, [t.cityId], 20, "person"),
     languageRule(v, t.languages, 12),
     {
       points: interestShared > 0 ? Math.min(14, interestShared * 4) : 0,
@@ -190,11 +213,6 @@ export function scorePerson(viewer: PersonView, target: PersonView): MatchResult
     reasons,
     narrative: personNarrative(viewer, target),
   };
-}
-
-function listPhrase(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? "";
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
 /**
@@ -250,7 +268,7 @@ export function scoreBrand(viewer: PersonView, brand: Brand): MatchResult {
 
   const rules: Rule[] = [
     categoryRule(v, brand.categories, 24),
-    locationRule(v, [brand.cityId, ...brand.marketCityIds], 20),
+    locationRule(v, [brand.cityId, ...brand.marketCityIds], 20, "brand"),
     languageRule(v, brand.languages, 12),
     {
       points: (roleMatch.length / brand.lookingFor.length) * 20,
@@ -326,7 +344,7 @@ export function scoreProject(viewer: PersonView, project: Project): MatchResult 
   const rules: Rule[] = [
     categoryRule(v, project.categories, 24),
     skillRule(v, project.requiredSkillIds, 20, "Required skills you have"),
-    locationRule(v, project.cityIds, 22),
+    locationRule(v, project.cityIds, 22, "project"),
     languageRule(v, project.languages, 10),
     {
       points: openSlots.length > 0 ? (matchingSlots.length / openSlots.length) * 20 : 0,
@@ -389,7 +407,7 @@ export function scoreEvent(viewer: PersonView, event: BeautyEvent): MatchResult 
   const v = viewer.profile;
   const rules: Rule[] = [
     categoryRule(v, event.categories, 26),
-    locationRule(v, [event.cityId], 24),
+    locationRule(v, [event.cityId], 24, "event"),
     languageRule(v, event.languages, 12),
     {
       points: event.online ? 12 : 0,
