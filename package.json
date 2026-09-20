@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "generate:map": "node scripts/generate-world-map.mjs"
+    "generate:map": "node scripts/generate-world-map.mjs",
+    "check:auth": "node scripts/check-auth.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "1.2.6",

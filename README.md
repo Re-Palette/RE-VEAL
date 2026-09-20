@@ -195,10 +195,32 @@ learn) stays public; the personal surfaces (`/messages`, `/notifications`,
    npx auth secret          # or: openssl rand -base64 32
    ```
 
+6. Check the result before starting the app:
+
+   ```bash
+   npm run check:auth                              # local only
+   npm run check:auth -- https://your-domain       # plus a deployment
+   ```
+
+   It reads the same `.env` files Next.js reads, names anything missing or
+   malformed, and prints the exact origins and redirect URIs to paste into the
+   console. It masks secret values rather than echoing them.
+
 On Vercel, set the same three variables in *Project Settings → Environment
 Variables* and redeploy. RE:VEAL requests only `openid profile email`, so
 Google returns a name, an email address and a profile picture — nothing else,
 and nothing is posted on the user's behalf.
+
+### When it does not work
+
+| What you see | What it means |
+| --- | --- |
+| The sign-in page still says demo mode | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` did not reach the process. Restart `npm run dev` — env files are read at boot — and run `npm run check:auth`. |
+| `redirect_uri_mismatch` | The callback URL is not registered on the OAuth client. It must match character for character, including `http` vs `https`, the port, and no trailing slash. |
+| `UntrustedHost` | The request host is not trusted. `trustHost: true` covers this; if a proxy rewrites `Host`, pin `AUTH_URL` to the site origin (no `/api/auth`). |
+| `Configuration` on `/signin` | Usually a missing or too-short `AUTH_SECRET`. |
+| `access_blocked` / app not verified | The OAuth consent screen is in *Testing*. Add the account under *Audience → Test users*, or publish the app. |
+| Signed in, but bounced back to `/onboarding` | Expected until the profile is completed — matching needs it. |
 
 ### Sign-up collects a profile, because matching needs one
 
