@@ -137,10 +137,10 @@ const origins = ["http://localhost:3000", origin].filter(Boolean);
 
 console.log(`\n${c.bold}Register these in Google Cloud Console${c.reset}`);
 console.log(`${c.dim}APIs & Services → Credentials → your OAuth client (Web application)${c.reset}\n`);
-console.log(`  Authorised JavaScript origins`);
-for (const o of origins) console.log(`    ${c.cyan}${o}${c.reset}`);
-console.log(`\n  Authorised redirect URIs`);
+console.log(`  Authorised redirect URIs  ${c.dim}(required — Google matches these exactly)${c.reset}`);
 for (const o of origins) console.log(`    ${c.cyan}${o}/api/auth/callback/google${c.reset}`);
+console.log(`\n  Authorised JavaScript origins  ${c.dim}(optional — the token exchange runs server-side)${c.reset}`);
+for (const o of origins) console.log(`    ${c.dim}${o}${c.reset}`);
 if (!origin) {
   console.log(
     `\n  ${c.dim}Re-run with your deployed origin to print its URIs too:${c.reset}\n    ${c.dim}node scripts/check-auth.mjs https://your-app.vercel.app${c.reset}`,

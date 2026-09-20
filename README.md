@@ -173,18 +173,24 @@ learn) stays public; the personal surfaces (`/messages`, `/notifications`,
 1. **Google Cloud Console** → *APIs & Services* → *Credentials* →
    *Create credentials* → *OAuth client ID* → *Web application*.
 
-2. **Authorised JavaScript origins**
-
-   ```
-   http://localhost:3000
-   https://<your-domain>
-   ```
-
-3. **Authorised redirect URIs** — the path is fixed by Auth.js:
+2. **Authorised redirect URIs** — required, and the path is fixed by Auth.js:
 
    ```
    http://localhost:3000/api/auth/callback/google
    https://<your-domain>/api/auth/callback/google
+   ```
+
+   Google matches these exactly: scheme, port and trailing slash all count,
+   and `127.0.0.1` is not `localhost`.
+
+3. **Authorised JavaScript origins** — *not* required here. Sign-in runs as a
+   server action and the code-for-token exchange happens on the server, so no
+   browser-side Google SDK is involved. Add the origins anyway if you plan to
+   introduce One Tap later; they are harmless.
+
+   ```
+   http://localhost:3000
+   https://<your-domain>
    ```
 
 4. Copy `.env.example` to `.env.local` and fill in the client ID and secret.
@@ -216,7 +222,7 @@ and nothing is posted on the user's behalf.
 | What you see | What it means |
 | --- | --- |
 | The sign-in page still says demo mode | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` did not reach the process. Restart `npm run dev` — env files are read at boot — and run `npm run check:auth`. |
-| `redirect_uri_mismatch` | The callback URL is not registered on the OAuth client. It must match character for character, including `http` vs `https`, the port, and no trailing slash. |
+| `redirect_uri_mismatch` | The callback URL is not registered under *Authorised redirect URIs* on the OAuth client. It must match character for character, including `http` vs `https`, the port, and no trailing slash. Registering only the JavaScript origin is not enough. |
 | `UntrustedHost` | The request host is not trusted. `trustHost: true` covers this; if a proxy rewrites `Host`, pin `AUTH_URL` to the site origin (no `/api/auth`). |
 | `Configuration` on `/signin` | Usually a missing or too-short `AUTH_SECRET`. |
 | `access_blocked` / app not verified | The OAuth consent screen is in *Testing*. Add the account under *Audience → Test users*, or publish the app. |
