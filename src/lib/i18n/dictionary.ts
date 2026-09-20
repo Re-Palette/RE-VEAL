@@ -503,6 +503,12 @@ export const UI_STRINGS = {
   "messages.send": { en: "Send message", ja: "メッセージを送信", ko: "메시지 보내기", zh: "发送消息" },
   "messages.back": { en: "Back to conversations", ja: "会話一覧に戻る", ko: "대화 목록으로", zh: "返回对话列表" },
   "messages.select": { en: "Select a conversation.", ja: "会話を選択してください。", ko: "대화를 선택하세요.", zh: "请选择一个对话。" },
+  "messages.startConversation": { en: "Message", ja: "メッセージを送る", ko: "메시지 보내기", zh: "发送消息" },
+  "messages.sending": { en: "Sending…", ja: "送信中…", ko: "보내는 중…", zh: "发送中…" },
+  "messages.error.send": { en: "That message did not send. Try again.", ja: "メッセージを送信できませんでした。もう一度お試しください。", ko: "메시지를 보내지 못했습니다. 다시 시도해 주세요.", zh: "消息发送失败，请重试。" },
+  "messages.error.access": { en: "You are no longer part of this conversation.", ja: "この会話の参加者ではなくなっています。", ko: "이 대화의 참여자가 아닙니다.", zh: "你已不在此对话中。" },
+  "messages.error.noStore": { en: "Messages are not being saved: no database is configured.", ja: "メッセージは保存されません。データベースが未設定です。", ko: "메시지가 저장되지 않습니다. 데이터베이스가 설정되지 않았습니다.", zh: "消息不会被保存：尚未配置数据库。" },
+  "messages.unsaved": { en: "Draft mode — nothing here is stored.", ja: "下書きモード — 保存はされません。", ko: "초안 모드 — 저장되지 않습니다.", zh: "草稿模式 — 不会保存。" },
 
   // ── Notifications ───────────────────────────────────────────────────────
   "notifications.title": { en: "Notifications", ja: "通知", ko: "알림", zh: "通知" },

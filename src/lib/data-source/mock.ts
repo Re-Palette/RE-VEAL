@@ -4,7 +4,8 @@ import { EVENTS, EVENT_BY_ID } from "@/lib/data/events";
 import { CITIES, CITY_BY_ID, COUNTRIES } from "@/lib/data/geo";
 import { PEOPLE, PERSON_BY_ID } from "@/lib/data/people";
 import { PROJECTS, PROJECT_BY_ID } from "@/lib/data/projects";
-import { CONNECTIONS, MESSAGES, NOTIFICATIONS, THREADS } from "@/lib/data/social";
+import { CONNECTIONS, NOTIFICATIONS } from "@/lib/data/social";
+import { messaging } from "@/lib/messaging";
 import { getViewer } from "@/lib/auth/viewer";
 import { SKILLS } from "@/lib/data/taxonomy";
 import { scoreBrand, scoreCity, scoreEvent, scorePerson, scoreProject } from "@/lib/match/engine";
@@ -89,16 +90,17 @@ export class MockDataSource implements DataSource {
     return COUNTRIES;
   }
 
+  // Conversations are the one part of the catalogue that is written as well
+  // as read, so they live behind their own store: seeded and read-only with no
+  // backend, persisted in Postgres once Supabase is configured.
   async listThreads() {
-    if (!(await seededSocialOnly())) return [];
-    return [...THREADS].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const viewer = (await getViewer()).person;
+    return messaging.listThreads(viewer.id);
   }
 
   async listMessages(threadId: string) {
-    if (!(await seededSocialOnly())) return [];
-    return MESSAGES.filter((m) => m.threadId === threadId).sort((a, b) =>
-      a.createdAt.localeCompare(b.createdAt),
-    );
+    const viewer = (await getViewer()).person;
+    return messaging.listMessages(threadId, viewer.id);
   }
 
   async listNotifications() {

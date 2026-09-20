@@ -150,6 +150,61 @@ separator, since CJK does not join clauses the way English does.
 
 ---
 
+## Conversations
+
+Messages are the one part of RE:VEAL that is written as well as read, so they
+live behind their own seam rather than inside the seeded catalogue.
+
+```ts
+export const messaging: MessagingStore = isSupabaseConfigured
+  ? new SupabaseMessagingStore()
+  : new SeedMessagingStore();
+```
+
+**Without Supabase** the seeded inbox belongs to the demo profile, a signed-in
+account starts empty, and the composer echoes what you type while saying
+plainly that nothing is being stored. The prototype stays explorable for
+anyone who clones the repository.
+
+**With Supabase** threads, participants, read marks and messages live in
+Postgres. Sending, opening a conversation from someone's profile, and clearing
+an unread badge all go through server actions.
+
+### Set it up
+
+Copy the project URL and the `service_role` secret from *Settings → API Keys*
+into `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — locally in `.env.local`,
+on Vercel in *Project Settings → Environment Variables* — then redeploy.
+
+### Why the service role key, and why that is safe here
+
+Sessions live in an Auth.js JWT rather than Supabase Auth, so there is no
+`auth.uid()` for row-level policies to key on. The tables instead have **RLS
+enabled with no policies at all**, which denies the anon and publishable keys
+outright, and every query runs on the server with the service role key.
+Authorisation is explicit: the store checks thread membership before it reads
+or writes, and `sendMessageAction` takes the sender from the session rather
+than the request, so a crafted call cannot post as someone else.
+`src/lib/supabase/server.ts` is marked `server-only`, which turns an accidental
+client import into a build error rather than a leaked credential.
+
+### Seeded conversations are materialised, not migrated
+
+The eight seeded conversations stay in the repository. A seed thread is copied
+into Postgres — thread row plus participants — the first time someone actually
+writes to it, which keeps the foreign key honest without a migration that has
+to be re-run every time the seed data changes. Reads merge the two sources;
+writes only ever go to the database.
+
+### Still in the cookie
+
+The signed-in profile itself has not moved yet: it still travels in the session
+cookie, which is why there is no `members` table. That is the next thing to
+move, together with a people directory that can show real accounts — until
+then two real accounts cannot find each other to message.
+
+---
+
 ## Accounts
 
 Sign-in is **Google only**, through Auth.js v5. There is no password to
@@ -312,12 +367,19 @@ scoring and reasoning throughout, connect and apply flows, message composing,
 notification read state, and language switching across the entire interface —
 chrome, taxonomy, match reasoning, dates and card-level content.
 
-**Mocked:** persistence. Connecting, applying, sending and saving are local
+**Persisted, once Supabase is configured:** conversations. Threads,
+participants, read marks and messages are in Postgres; sending, opening a
+conversation from a profile and clearing an unread badge are server actions.
+See *Conversations* above.
+
+**Mocked:** the rest of persistence. Connecting, applying and saving are local
 state; they survive interaction but not a reload. Each sits behind a component
 boundary that becomes a server action unchanged.
 
-**Not built:** file uploads, payments, real-time transport, and a database —
-accounts are real but their profiles live in the session cookie.
+**Not built:** file uploads, payments, and real-time transport — a new message
+appears on the next load, not the instant it is sent. Accounts are real but
+their profiles still live in the session cookie, so two real accounts cannot
+yet find each other to message.
 
 ---
 

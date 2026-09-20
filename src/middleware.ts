@@ -11,9 +11,7 @@ const PERSONAL = ["/messages", "/notifications", "/settings", "/portfolio", "/pr
  * require an account, and only once Google is actually configured, so a fresh
  * clone still runs end to end without credentials.
  */
-export default auth((request) => {
-  if (!isGoogleConfigured) return NextResponse.next();
-
+const guarded = auth((request) => {
   const { pathname, search } = request.nextUrl;
   const member = request.auth?.reveal;
 
@@ -37,6 +35,14 @@ export default auth((request) => {
 
   return NextResponse.next();
 });
+
+/**
+ * `auth()` spins up the session machinery for every request it wraps, and that
+ * needs AUTH_SECRET — so wrapping unconditionally made a credential-free clone
+ * log a MissingSecret error on every page view. With no Google credentials
+ * there is nothing to gate anyway, so the wrapper is skipped entirely.
+ */
+export default isGoogleConfigured ? guarded : () => NextResponse.next();
 
 export const config = {
   matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)"],

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Award, BadgeCheck, Globe2, Languages, MapPin, MessageCircle, Target } from "lucide-react";
+import { Award, BadgeCheck, Globe2, Languages, MapPin, Target } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/page-container";
 import { ConnectButton } from "@/components/actions/connect-button";
+import { MessageButton } from "@/components/actions/message-button";
 import { MatchReasons, MatchRing } from "@/components/match/match-score";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { TranslatableText } from "@/components/content/translatable-text";
@@ -109,12 +110,7 @@ export async function ProfileView({
               ) : (
                 <>
                   <ConnectButton initialStatus={connection} name={person.name} size="md" variant="primary" />
-                  <Button asChild variant="outline">
-                    <Link href="/messages">
-                      <MessageCircle />
-                      {t("common.message")}
-                    </Link>
-                  </Button>
+                  <MessageButton personId={person.id} />
                 </>
               )}
             </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Briefcase, Building2, Search, Send, Users } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Avatar } from "@/components/ui/avatar";
@@ -14,6 +15,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { LANGUAGE_SHORT } from "@/lib/i18n";
 import type { Message, MessageThread, PersonView, ThreadKind } from "@/lib/types";
 import { cn, relativeTime } from "@/lib/utils";
+import { markThreadReadAction, sendMessageAction } from "@/app/messages/actions";
 
 const KIND_ICON: Record<ThreadKind, React.ComponentType<{ className?: string }>> = {
   direct: Users,
@@ -32,18 +34,35 @@ export function MessagesView({
   threads,
   messages,
   people,
+  persists,
+  initialThreadId,
 }: {
   viewer: PersonView;
   threads: MessageThread[];
   messages: Record<string, Message[]>;
   people: PersonView[];
+  /** False when there is no database behind the composer. */
+  persists: boolean;
+  initialThreadId?: string;
 }) {
-  const { t, L } = useI18n();
-  const [activeId, setActiveId] = useState(threads[0]?.id);
+  const { t, L, language } = useI18n();
+  const router = useRouter();
+  const [activeId, setActiveId] = useState(
+    initialThreadId && threads.some((t) => t.id === initialThreadId)
+      ? initialThreadId
+      : threads[0]?.id,
+  );
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ThreadKind | "all">("all");
   const [draft, setDraft] = useState("");
+  // Local echo exists only when nothing is storing the message; with a
+  // database the server's copy is the one truth and there is nothing to
+  // reconcile.
   const [sent, setSent] = useState<Record<string, Message[]>>({});
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [, startTransition] = useTransition();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const personById = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
@@ -76,18 +95,67 @@ export function MessagesView({
   const active = threads.find((t) => t.id === activeId);
   const activeMessages = active ? [...(messages[active.id] ?? []), ...(sent[active.id] ?? [])] : [];
 
-  const send = () => {
-    if (!active || draft.trim().length === 0) return;
-    const message: Message = {
-      id: `local-${active.id}-${activeMessages.length}`,
-      threadId: active.id,
-      senderUserId: viewer.id,
-      body: draft.trim(),
-      language: "ja",
-      createdAt: new Date().toISOString(),
-    };
-    setSent((current) => ({ ...current, [active.id]: [...(current[active.id] ?? []), message] }));
+  const unreadFor = (thread: MessageThread) => (readIds.has(thread.id) ? 0 : thread.unread);
+
+  const open = (threadId: string) => {
+    setActiveId(threadId);
+    setMobileOpen(true);
+    setError(null);
+
+    const thread = threads.find((t) => t.id === threadId);
+    if (!persists || !thread || thread.unread === 0 || readIds.has(threadId)) return;
+    // Clear the badge immediately; the write is a receipt, not something the
+    // reader should have to wait for.
+    setReadIds((current) => new Set(current).add(threadId));
+    void markThreadReadAction(threadId);
+  };
+
+  // Opening straight into a conversation from someone's profile should also
+  // count as having read it.
+  useEffect(() => {
+    if (!initialThreadId) return;
+    const thread = threads.find((t) => t.id === initialThreadId);
+    if (!persists || !thread || thread.unread === 0) return;
+    setReadIds((current) => (current.has(initialThreadId) ? current : new Set(current).add(initialThreadId)));
+    void markThreadReadAction(initialThreadId);
+  }, [initialThreadId, persists, threads]);
+
+  const send = async () => {
+    const body = draft.trim();
+    if (!active || body.length === 0 || sending) return;
+
+    if (!persists) {
+      // No store: echo it so the interaction can still be demonstrated. The
+      // notice above the composer says plainly that nothing is kept.
+      setSent((current) => ({
+        ...current,
+        [active.id]: [
+          ...(current[active.id] ?? []),
+          {
+            id: `unsaved-${active.id}-${activeMessages.length}`,
+            threadId: active.id,
+            senderUserId: viewer.id,
+            body,
+            language,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      }));
+      setDraft("");
+      return;
+    }
+
+    setSending(true);
+    setError(null);
+    const result = await sendMessageAction(active.id, body, language);
+    setSending(false);
+
+    if (!result.ok) {
+      setError(t(result.errorKey ?? "messages.error.send"));
+      return;
+    }
     setDraft("");
+    startTransition(() => router.refresh());
   };
 
   return (
@@ -137,10 +205,7 @@ export function MessagesView({
               return (
                 <li key={thread.id}>
                   <button
-                    onClick={() => {
-                      setActiveId(thread.id);
-                      setMobileOpen(true);
-                    }}
+                    onClick={() => open(thread.id)}
                     className={cn(
                       "flex w-full items-start gap-3 border-b border-ink-08 p-4 text-left transition-colors",
                       thread.id === activeId ? "bg-lavender-soft/45" : "hover:bg-canvas",
@@ -155,9 +220,9 @@ export function MessagesView({
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-sm font-semibold">{titleFor(thread)}</span>
-                        {thread.unread > 0 && (
+                        {unreadFor(thread) > 0 && (
                           <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full gradient-accent text-[10px] font-semibold text-white">
-                            {thread.unread}
+                            {unreadFor(thread)}
                           </span>
                         )}
                       </span>
@@ -221,7 +286,9 @@ export function MessagesView({
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-canvas/60 p-4 sm:p-6">
                 {activeMessages.map((message) => {
                   const mine = message.senderUserId === viewer.id;
-                  const sender = personById.get(message.senderUserId);
+                  // A signed-in account is not in the seeded cast, so its own
+                  // messages would otherwise render with no name or avatar.
+                  const sender = personById.get(message.senderUserId) ?? (mine ? viewer : undefined);
                   return (
                     <div
                       key={message.id}
@@ -254,23 +321,42 @@ export function MessagesView({
                 })}
               </div>
 
-              <div className="flex items-end gap-2 border-t border-ink-08 p-3 sm:p-4">
-                <textarea
-                  rows={1}
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      send();
-                    }
-                  }}
-                  placeholder={t("messages.composer")}
-                  className="max-h-32 min-h-10 flex-1 resize-none rounded-2xl border border-ink-15 bg-white px-4 py-2.5 text-sm placeholder:text-ink-30 focus:border-lavender focus:outline-none focus:ring-4 focus:ring-lavender/12"
-                />
-                <Button variant="accent" size="icon" onClick={send} aria-label={t("messages.send")}>
-                  <Send />
-                </Button>
+              <div className="border-t border-ink-08 p-3 sm:p-4">
+                {!persists && (
+                  <p className="mb-2 rounded-xl bg-ink-04 px-3 py-2 text-[12px] text-ink-50">
+                    {t("messages.error.noStore")}
+                  </p>
+                )}
+                {error && (
+                  <p role="alert" className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-[12px] text-rose-700">
+                    {error}
+                  </p>
+                )}
+                <div className="flex items-end gap-2">
+                  <textarea
+                    rows={1}
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void send();
+                      }
+                    }}
+                    placeholder={sending ? t("messages.sending") : t("messages.composer")}
+                    disabled={sending}
+                    className="max-h-32 min-h-10 flex-1 resize-none rounded-2xl border border-ink-15 bg-white px-4 py-2.5 text-sm placeholder:text-ink-30 focus:border-lavender focus:outline-none focus:ring-4 focus:ring-lavender/12 disabled:opacity-60"
+                  />
+                  <Button
+                    variant="accent"
+                    size="icon"
+                    onClick={() => void send()}
+                    disabled={sending || draft.trim().length === 0}
+                    aria-label={t("messages.send")}
+                  >
+                    <Send />
+                  </Button>
+                </div>
               </div>
             </>
           ) : (
